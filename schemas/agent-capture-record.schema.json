@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-capture-record.schema.json",
+  "title": "Agent Capture Record",
+  "description": "Records an authorized capture that removes an agent from active board control and transfers it into quarantine or reserve processing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "capture_record_id",
+    "mission_id",
+    "board_state_before_ref",
+    "board_revision_before",
+    "capturing_move_receipt_ref",
+    "capturing_piece_profile_id",
+    "capturing_agent_id",
+    "captured_piece_profile_id",
+    "captured_agent_id",
+    "capture_node_id",
+    "captured_from_side",
+    "receiving_side",
+    "capture_outcome",
+    "requires_sanitization",
+    "authorization_ref",
+    "trace_ref",
+    "recorded_by",
+    "recorded_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.3.0"
+    },
+    "capture_record_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_before_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision_before": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "board_state_after_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "capturing_move_receipt_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "capturing_piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "capturing_agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "captured_piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "captured_agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "capture_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "captured_from_side": {
+      "$ref": "#/$defs/side"
+    },
+    "receiving_side": {
+      "$ref": "#/$defs/side"
+    },
+    "capture_outcome": {
+      "enum": [
+        "captured",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    "requires_sanitization": {
+      "type": "boolean"
+    },
+    "quarantine_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "capture_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "recorded_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "capture_outcome": {
+            "const": "captured"
+          }
+        },
+        "required": [
+          "capture_outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "board_state_after_ref",
+          "quarantine_node_id",
+          "capture_reason"
+        ],
+        "properties": {
+          "requires_sanitization": {
+            "const": true
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "side": {
+      "enum": [
+        "sente",
+        "gote",
+        "neutral"
+      ]
+    }
+  }
+}
