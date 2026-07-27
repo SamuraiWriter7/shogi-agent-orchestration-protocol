@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/shogi-agent-piece-profile.schema.json",
+  "title": "Shogi Agent Piece Profile",
+  "description": "Defines a role-bounded AI agent as a shogi-inspired piece with explicit capabilities, authority, movement limits, and resource budgets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "piece_profile_id",
+    "agent_id",
+    "piece_type",
+    "side",
+    "role_name",
+    "lifecycle_state",
+    "capability_profile",
+    "authority_scope",
+    "movement_profile",
+    "resource_budget",
+    "human_axis_binding_ref",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "piece_type": {
+      "enum": [
+        "king",
+        "rook",
+        "bishop",
+        "gold",
+        "silver",
+        "knight",
+        "lance",
+        "pawn",
+        "custom"
+      ]
+    },
+    "side": {
+      "enum": ["sente", "gote", "neutral"]
+    },
+    "role_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "role_description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "lifecycle_state": {
+      "enum": ["reserve", "active", "suspended", "retired"]
+    },
+    "capability_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_actions", "denied_actions", "tools", "data_scopes"],
+      "properties": {
+        "allowed_actions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "denied_actions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "tools": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "data_scopes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "authority_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority_scope_ref", "max_autonomy", "requires_human_review_for"],
+      "properties": {
+        "authority_scope_ref": {
+          "$ref": "#/$defs/identifier"
+        },
+        "max_autonomy": {
+          "enum": ["advisory", "supervised", "delegated"]
+        },
+        "requires_human_review_for": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        }
+      }
+    },
+    "movement_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "movement_policy_ref",
+        "max_hops_per_move",
+        "may_cross_security_zones",
+        "may_enter_restricted_zones"
+      ],
+      "properties": {
+        "movement_policy_ref": {
+          "$ref": "#/$defs/identifier"
+        },
+        "max_hops_per_move": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        },
+        "may_cross_security_zones": {
+          "type": "boolean"
+        },
+        "may_enter_restricted_zones": {
+          "type": "boolean"
+        }
+      }
+    },
+    "resource_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tokens_per_move",
+        "max_cost_per_move",
+        "currency",
+        "max_duration_seconds",
+        "max_concurrent_actions"
+      ],
+      "properties": {
+        "max_tokens_per_move": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_cost_per_move": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "max_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_concurrent_actions": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "human_axis_binding_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean", "null"]
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    }
+  }
+}
