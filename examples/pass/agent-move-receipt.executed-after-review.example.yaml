@@ -1,0 +1,29 @@
+schema_version: 0.2.0
+move_receipt_id: move-receipt.wind-mission.gold-review-0001
+move_proposal_ref: move-proposal.wind-mission.gold-review-0001
+move_evaluation_ref: move-evaluation.wind-mission.gold-review-0001
+mission_id: mission.wind-trace-audit
+piece_profile_id: piece-profile.audit-gold.v1
+agent_id: agent.audit-guardian-01
+source_node_id: node.audit-1
+target_node_id: node.human-gate-1
+evaluation_decision: human-review
+outcome: executed
+matched_rule_id: move.gold.audit-to-human-control
+authorization_ref: authorization.move.audit-gold.0001
+human_review_ref: human-review.move.audit-gold.0001
+placement_record_ref: placement.wind-mission.gold-review-0001
+board_state_before_ref: board-state.wind-mission.0001
+board_state_after_ref: board-state.wind-mission.0002-gold
+board_update_applied: true
+actual_resource_usage:
+  tokens: 4600
+  cost: 0.27
+  currency: USD
+  duration_seconds: 97
+  concurrent_actions: 1
+execution_started_at: '2026-07-27T00:03:03Z'
+execution_completed_at: '2026-07-27T00:03:04Z'
+trace_ref: trace.move-receipt.gold-review-0001
+recorded_by: agent.board-controller
+recorded_at: '2026-07-27T00:03:05Z'
