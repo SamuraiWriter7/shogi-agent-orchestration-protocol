@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-board-state.schema.json",
+  "title": "Agent Board State",
+  "description": "Represents the current mission board, its zones, nodes, active occupancies, reserve pool, and human-axis anchor.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "board_state_id",
+    "mission_id",
+    "board_revision",
+    "status",
+    "mission_objective",
+    "human_axis_ref",
+    "board_policy_ref",
+    "zones",
+    "nodes",
+    "occupancies",
+    "reserve_pool",
+    "recorded_by",
+    "recorded_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "board_state_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "enum": ["initializing", "active", "paused", "completed", "terminated"]
+    },
+    "mission_objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "human_axis_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_policy_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "zones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/zone"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "occupancies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/occupancy"
+      }
+    },
+    "reserve_pool": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reserve_entry"
+      }
+    },
+    "recorded_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "piece_type": {
+      "enum": [
+        "king",
+        "rook",
+        "bishop",
+        "gold",
+        "silver",
+        "knight",
+        "lance",
+        "pawn",
+        "custom"
+      ]
+    },
+    "zone_type": {
+      "enum": [
+        "human-control",
+        "planning",
+        "research",
+        "execution",
+        "audit",
+        "settlement",
+        "reserve",
+        "quarantine",
+        "custom"
+      ]
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "zone_id",
+        "zone_type",
+        "security_level",
+        "human_review_required",
+        "allowed_piece_types"
+      ],
+      "properties": {
+        "zone_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "zone_type": {
+          "$ref": "#/$defs/zone_type"
+        },
+        "security_level": {
+          "enum": ["public", "internal", "confidential", "restricted"]
+        },
+        "human_review_required": {
+          "type": "boolean"
+        },
+        "allowed_piece_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/piece_type"
+          }
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node_id",
+        "zone_id",
+        "node_type",
+        "capacity",
+        "enabled",
+        "adjacent_node_ids"
+      ],
+      "properties": {
+        "node_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "zone_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "node_type": {
+          "enum": [
+            "logical",
+            "workflow",
+            "compute",
+            "data",
+            "tool",
+            "human-gate",
+            "settlement",
+            "reserve",
+            "custom"
+          ]
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "adjacent_node_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "occupancy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "piece_profile_id",
+        "agent_id",
+        "node_id",
+        "placement_state",
+        "since"
+      ],
+      "properties": {
+        "piece_profile_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "agent_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "node_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "placement_state": {
+          "enum": ["active", "suspended", "quarantined"]
+        },
+        "since": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "reserve_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "piece_profile_id",
+        "agent_id",
+        "readiness_state",
+        "entered_at"
+      ],
+      "properties": {
+        "piece_profile_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "agent_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "readiness_state": {
+          "enum": ["ready", "review-required", "quarantined"]
+        },
+        "entered_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
