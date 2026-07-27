@@ -1,4 +1,4 @@
-schema_version: 0.1.0
+schema_version: 0.2.0
 placement_record_id: placement.wind-mission.0001
 mission_id: mission.wind-trace-audit
 board_state_before_ref: board-state.wind-mission.0001
@@ -11,10 +11,14 @@ target_node_id: node.execution-1
 placement_kind: reposition
 placement_status: applied
 requested_by: agent.board-controller
-placement_reason: Move the bounded trace worker into the execution zone after planning is complete.
-legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.1
+placement_reason: Move the bounded trace worker into the execution zone after planning
+  is complete.
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.2
+move_proposal_ref: move-proposal.wind-mission.pawn-0001
+move_evaluation_ref: move-evaluation.wind-mission.pawn-0001
 authorization_required: true
 authorization_ref: authorization.move.trace-pawn.0001
 trace_ref: trace.move.trace-pawn.0001
-requested_at: "2026-07-27T00:02:00Z"
-applied_at: "2026-07-27T00:02:03Z"
+requested_at: '2026-07-27T00:02:00Z'
+applied_at: '2026-07-27T00:02:03Z'
+
