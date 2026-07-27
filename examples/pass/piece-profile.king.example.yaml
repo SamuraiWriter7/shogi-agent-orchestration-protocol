@@ -1,11 +1,10 @@
-schema_version: 0.2.0
+schema_version: 0.3.0
 piece_profile_id: piece-profile.human-axis-king.v1
 agent_id: agent.human-axis-guardian
 piece_type: king
 side: sente
 role_name: Human Axis Guardian
-role_description: Protects mission intent and prevents autonomous replacement of the
-  human authority axis.
+role_description: Protects mission intent and prevents autonomous replacement of the human authority axis.
 lifecycle_state: active
 capability_profile:
   allowed_actions:
@@ -21,7 +20,7 @@ capability_profile:
   - data.mission-intent
   - data.board-governance
 movement_profile:
-  movement_policy_ref: policy.shogi-agent-legal-moves.v0.2
+  movement_policy_ref: policy.shogi-agent-legal-moves.v0.3
   max_hops_per_move: 0
   may_cross_security_zones: false
   may_enter_restricted_zones: true
