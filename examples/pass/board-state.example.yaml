@@ -1,12 +1,11 @@
-schema_version: 0.2.0
+schema_version: 0.3.0
 board_state_id: board-state.wind-mission.0001
 mission_id: mission.wind-trace-audit
 board_revision: 1
 status: active
-mission_objective: Collect workflow traces, execute approved processing, and preserve
-  human-governed auditability.
+mission_objective: Collect workflow traces, execute approved processing, and preserve human-governed auditability.
 human_axis_ref: human-axis.wind-mission.primary
-board_policy_ref: policy.shogi-agent-legal-moves.v0.2
+board_policy_ref: policy.shogi-agent-legal-moves.v0.3
 zones:
 - zone_id: zone.human-control
   zone_type: human-control
@@ -71,6 +70,20 @@ zones:
   - pawn
   - custom
   description: Inactive but retained agents awaiting placement.
+- zone_id: zone.quarantine
+  zone_type: quarantine
+  security_level: restricted
+  human_review_required: true
+  allowed_piece_types:
+  - rook
+  - bishop
+  - gold
+  - silver
+  - knight
+  - lance
+  - pawn
+  - custom
+  description: Isolation zone for captured or untrusted agents before reserve admission.
 nodes:
 - node_id: node.human-gate-1
   zone_id: zone.human-control
@@ -96,6 +109,7 @@ nodes:
   - node.planning-1
   - node.audit-1
   - node.settlement-1
+  - node.quarantine-1
 - node_id: node.audit-1
   zone_id: zone.audit
   node_type: workflow
@@ -120,21 +134,43 @@ nodes:
   enabled: true
   adjacent_node_ids:
   - node.planning-1
+  - node.quarantine-1
+- node_id: node.quarantine-1
+  zone_id: zone.quarantine
+  node_type: custom
+  capacity: 4
+  enabled: true
+  adjacent_node_ids:
+  - node.execution-1
+  - node.reserve-1
 occupancies:
 - piece_profile_id: piece-profile.human-axis-king.v1
   agent_id: agent.human-axis-guardian
   node_id: node.human-gate-1
   placement_state: active
   since: '2026-07-27T00:01:00Z'
+  effective_side: sente
+  controller_ref: human.shidenkai-alpha
 - piece_profile_id: piece-profile.trace-pawn.v1
   agent_id: agent.trace-worker-01
   node_id: node.planning-1
   placement_state: active
   since: '2026-07-27T00:01:00Z'
+  effective_side: sente
+  controller_ref: human.shidenkai-alpha
 - piece_profile_id: piece-profile.audit-gold.v1
   agent_id: agent.audit-guardian-01
   node_id: node.audit-1
   placement_state: active
+  since: '2026-07-27T00:01:00Z'
+  effective_side: sente
+  controller_ref: human.shidenkai-alpha
+- piece_profile_id: piece-profile.external-silver.v1
+  agent_id: agent.external-analyst-01
+  node_id: node.execution-1
+  placement_state: active
+  effective_side: gote
+  controller_ref: controller.external-party
   since: '2026-07-27T00:01:00Z'
 reserve_pool: []
 recorded_by: agent.board-controller
