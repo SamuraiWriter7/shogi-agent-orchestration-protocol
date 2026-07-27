@@ -1,0 +1,23 @@
+schema_version: 0.3.0
+capture_record_id: capture.wind-mission.king-invalid
+mission_id: mission.wind-trace-audit
+board_state_before_ref: board-state.wind-mission.0001
+board_revision_before: 1
+board_state_after_ref: board-state.wind-mission.0002
+capturing_move_receipt_ref: move-receipt.wind-mission.pawn-0001
+capturing_piece_profile_id: piece-profile.trace-pawn.v1
+capturing_agent_id: agent.trace-worker-01
+captured_piece_profile_id: piece-profile.human-axis-king.v1
+captured_agent_id: agent.human-axis-guardian
+capture_node_id: node.human-gate-1
+captured_from_side: sente
+receiving_side: sente
+capture_outcome: captured
+requires_sanitization: true
+quarantine_node_id: node.quarantine-1
+authorization_ref: authorization.capture.silver-0001
+human_review_ref: human-review.capture.silver-0001
+capture_reason: Remove the externally controlled silver agent from active execution and transfer it to quarantine for possible bounded reuse.
+trace_ref: trace.capture.silver-0001
+recorded_by: agent.board-controller
+recorded_at: '2026-07-27T00:02:04Z'
