@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-move-proposal.schema.json",
+  "title": "Agent Move Proposal",
+  "description": "Proposes a bounded board move before legality, authorization, and execution are finalized.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "move_proposal_id",
+    "mission_id",
+    "board_state_ref",
+    "board_revision",
+    "piece_profile_id",
+    "agent_id",
+    "source_node_id",
+    "target_node_id",
+    "move_kind",
+    "requested_action",
+    "requested_capabilities",
+    "estimated_resource_usage",
+    "legal_move_policy_ref",
+    "proposal_status",
+    "proposed_by",
+    "proposal_reason",
+    "proposed_at",
+    "valid_until",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.2.0"
+    },
+    "move_proposal_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "source_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "target_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "move_kind": {
+      "enum": [
+        "reposition",
+        "hold"
+      ]
+    },
+    "requested_action": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "requested_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "estimated_resource_usage": {
+      "$ref": "#/$defs/resource_usage"
+    },
+    "legal_move_policy_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "proposal_status": {
+      "enum": [
+        "proposed",
+        "withdrawn",
+        "expired"
+      ]
+    },
+    "priority": {
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "critical"
+      ]
+    },
+    "proposed_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "proposal_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "proposed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "integer",
+          "boolean",
+          "null"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "resource_usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tokens",
+        "cost",
+        "currency",
+        "duration_seconds",
+        "concurrent_actions"
+      ],
+      "properties": {
+        "tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "concurrent_actions": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
