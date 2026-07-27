@@ -1,0 +1,19 @@
+schema_version: 0.1.0
+placement_record_id: placement.wind-mission.unknown-piece
+mission_id: mission.wind-trace-audit
+board_state_before_ref: board-state.wind-mission.0001
+board_state_after_ref: board-state.wind-mission.0002
+piece_profile_id: piece-profile.nonexistent.v1
+agent_id: agent.nonexistent
+source_location: board
+source_node_id: node.planning-1
+target_node_id: node.execution-1
+placement_kind: reposition
+placement_status: applied
+requested_by: agent.board-controller
+placement_reason: This example must fail because the piece profile is not registered.
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.1
+authorization_required: true
+authorization_ref: authorization.move.unknown.0001
+requested_at: "2026-07-27T00:02:00Z"
+applied_at: "2026-07-27T00:02:03Z"
