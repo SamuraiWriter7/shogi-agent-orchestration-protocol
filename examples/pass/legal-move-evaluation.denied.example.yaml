@@ -1,0 +1,50 @@
+schema_version: 0.2.0
+move_evaluation_id: move-evaluation.wind-mission.denied-0001
+move_proposal_ref: move-proposal.wind-mission.denied-0001
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0001
+evaluated_board_revision: 1
+piece_profile_id: piece-profile.trace-pawn.v1
+agent_id: agent.trace-worker-01
+source_node_id: node.planning-1
+target_node_id: node.settlement-1
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.2
+decision: deny
+route:
+  path_node_ids:
+  - node.planning-1
+  - node.execution-1
+  - node.settlement-1
+  hop_count: 2
+checks:
+  mission_in_scope: true
+  board_reference_current: true
+  piece_registered: true
+  agent_matches_piece: true
+  source_matches_board: true
+  target_available: true
+  target_zone_allows_piece: true
+  route_reachable: true
+  within_piece_hop_limit: false
+  movement_rule_matched: false
+  required_capabilities_present: true
+  security_boundary_allowed: false
+  restricted_zone_entry_allowed: false
+  resource_budget_satisfied: true
+  all_checks_passed: false
+required_controls:
+  authorization_required: false
+  human_review_required: false
+evaluation_reasons:
+- code: PIECE_HOP_LIMIT_EXCEEDED
+  message: The shortest route exceeds the piece movement limit.
+- code: NO_LEGAL_MOVEMENT_RULE
+  message: No movement rule permits this piece and zone transition.
+- code: SECURITY_BOUNDARY_FORBIDDEN
+  message: The piece may not cross the source and target security boundary.
+- code: RESTRICTED_ZONE_ENTRY_FORBIDDEN
+  message: The piece may not enter the restricted target zone.
+evaluated_by: agent.legal-move-evaluator
+evaluated_at: '2026-07-27T00:04:01Z'
+valid_until: '2026-07-27T00:09:01Z'
+trace_ref: trace.move-evaluation.denied-0001
