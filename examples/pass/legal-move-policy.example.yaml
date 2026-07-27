@@ -1,110 +1,108 @@
-schema_version: 0.2.0
-policy_id: policy.shogi-agent-legal-moves.v0.2
-policy_version: 0.2.0
-
+schema_version: 0.3.0
+policy_id: policy.shogi-agent-legal-moves.v0.3
+policy_version: 0.3.0
 allowed_mission_ids:
-  - mission.wind-trace-audit
-
+- mission.wind-trace-audit
 default_decision: deny
-
 initial_placement_rules:
-  - rule_id: initial.king.human-control
-    piece_types:
-      - king
-    allowed_zone_types:
-      - human-control
-    required_capabilities:
-      - confirm_mission_intent
-    requires_authorization: true
-    requires_human_review: true
-
-  - rule_id: initial.pawn.workflow
-    piece_types:
-      - pawn
-    allowed_zone_types:
-      - planning
-      - execution
-    required_capabilities:
-      - collect_trace
-    requires_authorization: true
-    requires_human_review: false
-
-  - rule_id: initial.gold.audit
-    piece_types:
-      - gold
-    allowed_zone_types:
-      - audit
-      - human-control
-    required_capabilities:
-      - inspect_authorization
-    requires_authorization: true
-    requires_human_review: false
-
+- rule_id: initial.king.human-control
+  piece_types:
+  - king
+  allowed_zone_types:
+  - human-control
+  required_capabilities:
+  - confirm_mission_intent
+  requires_authorization: true
+  requires_human_review: true
+- rule_id: initial.pawn.workflow
+  piece_types:
+  - pawn
+  allowed_zone_types:
+  - planning
+  - execution
+  required_capabilities:
+  - collect_trace
+  requires_authorization: true
+  requires_human_review: false
+- rule_id: initial.gold.audit
+  piece_types:
+  - gold
+  allowed_zone_types:
+  - audit
+  - human-control
+  required_capabilities:
+  - inspect_authorization
+  requires_authorization: true
+  requires_human_review: false
+- rule_id: initial.silver.reserve-to-planning
+  piece_types:
+  - silver
+  allowed_zone_types:
+  - planning
+  required_capabilities:
+  - analyze_external_data
+  requires_authorization: true
+  requires_human_review: true
 movement_rules:
-  - rule_id: move.pawn.planning-to-execution
-    piece_types:
-      - pawn
-    from_zone_types:
-      - planning
-    to_zone_types:
-      - execution
-    max_hops: 1
-    required_capabilities:
-      - collect_trace
-    requires_authorization: true
-    requires_human_review: false
-
-  - rule_id: move.pawn.execution-to-audit
-    piece_types:
-      - pawn
-    from_zone_types:
-      - execution
-    to_zone_types:
-      - audit
-    max_hops: 1
-    required_capabilities:
-      - forward_trace
-    requires_authorization: true
-    requires_human_review: false
-
-  - rule_id: move.gold.audit-to-human-control
-    piece_types:
-      - gold
-    from_zone_types:
-      - audit
-    to_zone_types:
-      - human-control
-    max_hops: 1
-    required_capabilities:
-      - request_human_review
-    requires_authorization: true
-    requires_human_review: true
-
-  - rule_id: move.gold.human-control-to-audit
-    piece_types:
-      - gold
-    from_zone_types:
-      - human-control
-    to_zone_types:
-      - audit
-    max_hops: 1
-    required_capabilities:
-      - inspect_authorization
-    requires_authorization: true
-    requires_human_review: false
-
-  - rule_id: move.king.hold-position
-    piece_types:
-      - king
-    from_zone_types:
-      - human-control
-    to_zone_types:
-      - human-control
-    max_hops: 0
-    required_capabilities:
-      - confirm_mission_intent
-    requires_authorization: true
-    requires_human_review: true
-
+- rule_id: move.pawn.planning-to-execution
+  piece_types:
+  - pawn
+  from_zone_types:
+  - planning
+  to_zone_types:
+  - execution
+  max_hops: 1
+  required_capabilities:
+  - collect_trace
+  requires_authorization: true
+  requires_human_review: false
+- rule_id: move.pawn.execution-to-audit
+  piece_types:
+  - pawn
+  from_zone_types:
+  - execution
+  to_zone_types:
+  - audit
+  max_hops: 1
+  required_capabilities:
+  - forward_trace
+  requires_authorization: true
+  requires_human_review: false
+- rule_id: move.gold.audit-to-human-control
+  piece_types:
+  - gold
+  from_zone_types:
+  - audit
+  to_zone_types:
+  - human-control
+  max_hops: 1
+  required_capabilities:
+  - request_human_review
+  requires_authorization: true
+  requires_human_review: true
+- rule_id: move.gold.human-control-to-audit
+  piece_types:
+  - gold
+  from_zone_types:
+  - human-control
+  to_zone_types:
+  - audit
+  max_hops: 1
+  required_capabilities:
+  - inspect_authorization
+  requires_authorization: true
+  requires_human_review: false
+- rule_id: move.king.hold-position
+  piece_types:
+  - king
+  from_zone_types:
+  - human-control
+  to_zone_types:
+  - human-control
+  max_hops: 0
+  required_capabilities:
+  - confirm_mission_intent
+  requires_authorization: true
+  requires_human_review: true
 created_by: human.shidenkai-alpha
-created_at: "2026-07-27T00:00:00Z"
+created_at: '2026-07-27T00:00:00Z'
