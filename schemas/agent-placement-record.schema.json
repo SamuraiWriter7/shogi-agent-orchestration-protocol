@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-placement-record.schema.json",
   "title": "Agent Placement Record",
-  "description": "Records an initial placement or board movement of a role-bounded agent.",
+  "description": "Records an initial placement or applied board movement, optionally linked to a v0.2 move proposal and legal evaluation.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,7 +25,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.1.0"
+      "const": "0.2.0"
     },
     "placement_record_id": {
       "$ref": "#/$defs/identifier"
@@ -46,7 +46,11 @@
       "$ref": "#/$defs/identifier"
     },
     "source_location": {
-      "enum": ["board", "reserve", "external"]
+      "enum": [
+        "board",
+        "reserve",
+        "external"
+      ]
     },
     "source_node_id": {
       "$ref": "#/$defs/identifier"
@@ -55,10 +59,19 @@
       "$ref": "#/$defs/identifier"
     },
     "placement_kind": {
-      "enum": ["initial", "reposition", "manual-correction"]
+      "enum": [
+        "initial",
+        "reposition",
+        "manual-correction"
+      ]
     },
     "placement_status": {
-      "enum": ["proposed", "authorized", "applied", "rejected"]
+      "enum": [
+        "proposed",
+        "authorized",
+        "applied",
+        "rejected"
+      ]
     },
     "requested_by": {
       "$ref": "#/$defs/identifier"
@@ -90,6 +103,12 @@
     "applied_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "move_proposal_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "move_evaluation_ref": {
+      "$ref": "#/$defs/identifier"
     }
   },
   "allOf": [
@@ -100,10 +119,14 @@
             "const": "board"
           }
         },
-        "required": ["source_location"]
+        "required": [
+          "source_location"
+        ]
       },
       "then": {
-        "required": ["source_node_id"]
+        "required": [
+          "source_node_id"
+        ]
       }
     },
     {
@@ -113,10 +136,14 @@
             "const": true
           }
         },
-        "required": ["authorization_required"]
+        "required": [
+          "authorization_required"
+        ]
       },
       "then": {
-        "required": ["authorization_ref"]
+        "required": [
+          "authorization_ref"
+        ]
       }
     },
     {
@@ -126,10 +153,14 @@
             "const": "applied"
           }
         },
-        "required": ["placement_status"]
+        "required": [
+          "placement_status"
+        ]
       },
       "then": {
-        "required": ["applied_at"]
+        "required": [
+          "applied_at"
+        ]
       }
     }
   ],
@@ -140,3 +171,4 @@
     }
   }
 }
+
