@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-move-receipt.schema.json",
+  "title": "Agent Move Receipt",
+  "description": "Records whether an evaluated move was executed, blocked, cancelled, or expired and whether the board was mutated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "move_receipt_id",
+    "move_proposal_ref",
+    "move_evaluation_ref",
+    "mission_id",
+    "piece_profile_id",
+    "agent_id",
+    "source_node_id",
+    "target_node_id",
+    "evaluation_decision",
+    "outcome",
+    "board_state_before_ref",
+    "board_update_applied",
+    "actual_resource_usage",
+    "trace_ref",
+    "recorded_by",
+    "recorded_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.2.0"
+    },
+    "move_receipt_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "move_proposal_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "move_evaluation_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "source_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "target_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "evaluation_decision": {
+      "enum": [
+        "allow",
+        "human-review",
+        "deny"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "executed",
+        "blocked",
+        "cancelled",
+        "expired"
+      ]
+    },
+    "matched_rule_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "placement_record_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_before_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_after_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_update_applied": {
+      "type": "boolean"
+    },
+    "actual_resource_usage": {
+      "$ref": "#/$defs/resource_usage"
+    },
+    "execution_started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "execution_completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9._-]{2,63}$"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "recorded_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "executed"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "matched_rule_id",
+          "placement_record_ref",
+          "board_state_after_ref",
+          "execution_started_at",
+          "execution_completed_at"
+        ],
+        "properties": {
+          "board_update_applied": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "enum": [
+              "blocked",
+              "cancelled",
+              "expired"
+            ]
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
+      "then": {
+        "required": [
+          "failure"
+        ],
+        "properties": {
+          "board_update_applied": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evaluation_decision": {
+            "const": "deny"
+          }
+        },
+        "required": [
+          "evaluation_decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "outcome": {
+            "const": "blocked"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "resource_usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tokens",
+        "cost",
+        "currency",
+        "duration_seconds",
+        "concurrent_actions"
+      ],
+      "properties": {
+        "tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "concurrent_actions": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
