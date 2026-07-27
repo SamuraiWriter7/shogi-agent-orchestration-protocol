@@ -1,0 +1,27 @@
+schema_version: 0.2.0
+move_proposal_id: move-proposal.wind-mission.denied-0001
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0001
+board_revision: 1
+piece_profile_id: piece-profile.trace-pawn.v1
+agent_id: agent.trace-worker-01
+source_node_id: node.planning-1
+target_node_id: node.settlement-1
+move_kind: reposition
+requested_action: collect_trace
+requested_capabilities:
+- collect_trace
+estimated_resource_usage:
+  tokens: 6000
+  cost: 0.1
+  currency: USD
+  duration_seconds: 100
+  concurrent_actions: 1
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.2
+proposal_status: proposed
+priority: normal
+proposed_by: agent.board-controller
+proposal_reason: Attempt a direct move to settlement; the evaluator must deny the illegal bypass.
+proposed_at: '2026-07-27T00:04:00Z'
+valid_until: '2026-07-27T00:14:00Z'
+trace_ref: trace.move-proposal.denied-0001
