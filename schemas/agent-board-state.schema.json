@@ -23,7 +23,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.1.0"
+      "const": "0.2.0"
     },
     "board_state_id": {
       "$ref": "#/$defs/identifier"
@@ -36,7 +36,13 @@
       "minimum": 1
     },
     "status": {
-      "enum": ["initializing", "active", "paused", "completed", "terminated"]
+      "enum": [
+        "initializing",
+        "active",
+        "paused",
+        "completed",
+        "terminated"
+      ]
     },
     "mission_objective": {
       "type": "string",
@@ -132,7 +138,12 @@
           "$ref": "#/$defs/zone_type"
         },
         "security_level": {
-          "enum": ["public", "internal", "confidential", "restricted"]
+          "enum": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted"
+          ]
         },
         "human_review_required": {
           "type": "boolean"
@@ -219,7 +230,11 @@
           "$ref": "#/$defs/identifier"
         },
         "placement_state": {
-          "enum": ["active", "suspended", "quarantined"]
+          "enum": [
+            "active",
+            "suspended",
+            "quarantined"
+          ]
         },
         "since": {
           "type": "string",
@@ -244,7 +259,11 @@
           "$ref": "#/$defs/identifier"
         },
         "readiness_state": {
-          "enum": ["ready", "review-required", "quarantined"]
+          "enum": [
+            "ready",
+            "review-required",
+            "quarantined"
+          ]
         },
         "entered_at": {
           "type": "string",
