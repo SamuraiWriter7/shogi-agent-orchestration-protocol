@@ -22,7 +22,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.1.0"
+      "const": "0.2.0"
     },
     "piece_profile_id": {
       "$ref": "#/$defs/identifier"
@@ -44,7 +44,11 @@
       ]
     },
     "side": {
-      "enum": ["sente", "gote", "neutral"]
+      "enum": [
+        "sente",
+        "gote",
+        "neutral"
+      ]
     },
     "role_name": {
       "type": "string",
@@ -56,12 +60,22 @@
       "maxLength": 1000
     },
     "lifecycle_state": {
-      "enum": ["reserve", "active", "suspended", "retired"]
+      "enum": [
+        "reserve",
+        "active",
+        "suspended",
+        "retired"
+      ]
     },
     "capability_profile": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["allowed_actions", "denied_actions", "tools", "data_scopes"],
+      "required": [
+        "allowed_actions",
+        "denied_actions",
+        "tools",
+        "data_scopes"
+      ],
       "properties": {
         "allowed_actions": {
           "type": "array",
@@ -101,13 +115,21 @@
     "authority_scope": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["authority_scope_ref", "max_autonomy", "requires_human_review_for"],
+      "required": [
+        "authority_scope_ref",
+        "max_autonomy",
+        "requires_human_review_for"
+      ],
       "properties": {
         "authority_scope_ref": {
           "$ref": "#/$defs/identifier"
         },
         "max_autonomy": {
-          "enum": ["advisory", "supervised", "delegated"]
+          "enum": [
+            "advisory",
+            "supervised",
+            "delegated"
+          ]
         },
         "requires_human_review_for": {
           "type": "array",
@@ -189,7 +211,13 @@
     "metadata": {
       "type": "object",
       "additionalProperties": {
-        "type": ["string", "number", "integer", "boolean", "null"]
+        "type": [
+          "string",
+          "number",
+          "integer",
+          "boolean",
+          "null"
+        ]
       }
     }
   },
