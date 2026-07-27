@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/reserve-pool-entry.schema.json",
+  "title": "Reserve Pool Entry",
+  "description": "Records a versioned reserve state for a captured, withdrawn, handed-off, or external agent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reserve_entry_id",
+    "mission_id",
+    "board_state_ref",
+    "board_revision",
+    "piece_profile_id",
+    "agent_id",
+    "source_type",
+    "original_side",
+    "assigned_side",
+    "readiness_state",
+    "authority_state",
+    "memory_state",
+    "entered_by",
+    "entered_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.3.0"
+    },
+    "reserve_entry_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "previous_reserve_entry_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "source_type": {
+      "enum": [
+        "captured",
+        "withdrawn",
+        "handoff",
+        "external"
+      ]
+    },
+    "capture_record_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "sanitization_assessment_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "original_side": {
+      "$ref": "#/$defs/side"
+    },
+    "assigned_side": {
+      "$ref": "#/$defs/side"
+    },
+    "readiness_state": {
+      "enum": [
+        "quarantined",
+        "review-required",
+        "ready",
+        "blocked"
+      ]
+    },
+    "authority_state": {
+      "enum": [
+        "revoked",
+        "pending",
+        "re-authorized"
+      ]
+    },
+    "memory_state": {
+      "enum": [
+        "isolated",
+        "sanitized",
+        "retained",
+        "blocked"
+      ]
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "entered_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "entered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ready_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "side": {
+      "enum": [
+        "sente",
+        "gote",
+        "neutral"
+      ]
+    }
+  }
+}
