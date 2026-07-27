@@ -1,0 +1,178 @@
+schema_version: 0.3.0
+board_state_id: board-state.wind-mission.0002
+mission_id: mission.wind-trace-audit
+board_revision: 2
+status: active
+mission_objective: Collect workflow traces, execute approved processing, and preserve human-governed auditability.
+human_axis_ref: human-axis.wind-mission.primary
+board_policy_ref: policy.shogi-agent-legal-moves.v0.3
+zones:
+- zone_id: zone.human-control
+  zone_type: human-control
+  security_level: restricted
+  human_review_required: true
+  allowed_piece_types:
+  - king
+  - gold
+  description: Human authority, mission intent, and emergency halt zone.
+- zone_id: zone.planning
+  zone_type: planning
+  security_level: confidential
+  human_review_required: false
+  allowed_piece_types:
+  - pawn
+  - silver
+  - bishop
+  - knight
+  description: Work decomposition and move preparation zone.
+- zone_id: zone.execution
+  zone_type: execution
+  security_level: confidential
+  human_review_required: false
+  allowed_piece_types:
+  - pawn
+  - rook
+  - bishop
+  - silver
+  - knight
+  - lance
+  description: Approved business and technical action zone.
+- zone_id: zone.audit
+  zone_type: audit
+  security_level: restricted
+  human_review_required: false
+  allowed_piece_types:
+  - gold
+  - silver
+  - bishop
+  description: Authorization, trace, and conformance verification zone.
+- zone_id: zone.settlement
+  zone_type: settlement
+  security_level: restricted
+  human_review_required: true
+  allowed_piece_types:
+  - king
+  - gold
+  - pawn
+  description: Value allocation and settlement handoff zone.
+- zone_id: zone.reserve
+  zone_type: reserve
+  security_level: internal
+  human_review_required: false
+  allowed_piece_types:
+  - king
+  - rook
+  - bishop
+  - gold
+  - silver
+  - knight
+  - lance
+  - pawn
+  - custom
+  description: Inactive but retained agents awaiting placement.
+- zone_id: zone.quarantine
+  zone_type: quarantine
+  security_level: restricted
+  human_review_required: true
+  allowed_piece_types:
+  - rook
+  - bishop
+  - gold
+  - silver
+  - knight
+  - lance
+  - pawn
+  - custom
+  description: Isolation zone for captured or untrusted agents before reserve admission.
+nodes:
+- node_id: node.human-gate-1
+  zone_id: zone.human-control
+  node_type: human-gate
+  capacity: 1
+  enabled: true
+  adjacent_node_ids:
+  - node.audit-1
+- node_id: node.planning-1
+  zone_id: zone.planning
+  node_type: workflow
+  capacity: 2
+  enabled: true
+  adjacent_node_ids:
+  - node.execution-1
+  - node.reserve-1
+- node_id: node.execution-1
+  zone_id: zone.execution
+  node_type: compute
+  capacity: 4
+  enabled: true
+  adjacent_node_ids:
+  - node.planning-1
+  - node.audit-1
+  - node.settlement-1
+  - node.quarantine-1
+- node_id: node.audit-1
+  zone_id: zone.audit
+  node_type: workflow
+  capacity: 2
+  enabled: true
+  adjacent_node_ids:
+  - node.human-gate-1
+  - node.execution-1
+  - node.settlement-1
+- node_id: node.settlement-1
+  zone_id: zone.settlement
+  node_type: settlement
+  capacity: 2
+  enabled: true
+  adjacent_node_ids:
+  - node.execution-1
+  - node.audit-1
+- node_id: node.reserve-1
+  zone_id: zone.reserve
+  node_type: reserve
+  capacity: 16
+  enabled: true
+  adjacent_node_ids:
+  - node.planning-1
+  - node.quarantine-1
+- node_id: node.quarantine-1
+  zone_id: zone.quarantine
+  node_type: custom
+  capacity: 4
+  enabled: true
+  adjacent_node_ids:
+  - node.execution-1
+  - node.reserve-1
+occupancies:
+- piece_profile_id: piece-profile.human-axis-king.v1
+  agent_id: agent.human-axis-guardian
+  node_id: node.human-gate-1
+  placement_state: active
+  since: '2026-07-27T00:01:00Z'
+  effective_side: sente
+  controller_ref: human.shidenkai-alpha
+- piece_profile_id: piece-profile.trace-pawn.v1
+  agent_id: agent.trace-worker-01
+  node_id: node.execution-1
+  placement_state: active
+  since: '2026-07-27T00:02:03Z'
+  effective_side: sente
+  controller_ref: human.shidenkai-alpha
+- piece_profile_id: piece-profile.audit-gold.v1
+  agent_id: agent.audit-guardian-01
+  node_id: node.audit-1
+  placement_state: active
+  since: '2026-07-27T00:01:00Z'
+  effective_side: sente
+  controller_ref: human.shidenkai-alpha
+reserve_pool:
+- reserve_entry_ref: reserve-entry.wind-mission.silver.quarantined-0001
+  piece_profile_id: piece-profile.external-silver.v1
+  agent_id: agent.external-analyst-01
+  effective_side: neutral
+  source_type: captured
+  readiness_state: quarantined
+  capture_record_ref: capture.wind-mission.silver-0001
+  entered_at: '2026-07-27T00:02:04Z'
+recorded_by: agent.board-controller
+recorded_at: '2026-07-27T00:02:04Z'
