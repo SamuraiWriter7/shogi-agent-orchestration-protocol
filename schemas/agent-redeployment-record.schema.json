@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-redeployment-record.schema.json",
+  "title": "Agent Redeployment Record",
+  "description": "Records re-entry of a ready reserve agent onto a board under a new bounded control assignment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "redeployment_record_id",
+    "mission_id",
+    "reserve_entry_ref",
+    "sanitization_assessment_ref",
+    "piece_profile_id",
+    "agent_id",
+    "assigned_side",
+    "board_state_before_ref",
+    "board_revision_before",
+    "board_state_after_ref",
+    "board_revision_after",
+    "target_node_id",
+    "placement_record_ref",
+    "redeployment_status",
+    "authorization_ref",
+    "authority_scope_binding_ref",
+    "requested_by",
+    "redeployment_reason",
+    "requested_at",
+    "applied_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.3.0"
+    },
+    "redeployment_record_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "reserve_entry_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "sanitization_assessment_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "assigned_side": {
+      "$ref": "#/$defs/side"
+    },
+    "board_state_before_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision_before": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "board_state_after_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision_after": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "target_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "placement_record_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "redeployment_status": {
+      "enum": [
+        "proposed",
+        "authorized",
+        "applied",
+        "rejected"
+      ]
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "authority_scope_binding_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "requested_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "redeployment_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "applied_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "side": {
+      "enum": [
+        "sente",
+        "gote",
+        "neutral"
+      ]
+    }
+  }
+}
