@@ -1,11 +1,10 @@
-schema_version: 0.2.0
+schema_version: 0.3.0
 piece_profile_id: piece-profile.audit-gold.v1
 agent_id: agent.audit-guardian-01
 piece_type: gold
 side: sente
 role_name: Audit and Authorization Guardian
-role_description: Stabilizes the board by checking authorization, trace continuity,
-  and audit readiness.
+role_description: Stabilizes the board by checking authorization, trace continuity, and audit readiness.
 lifecycle_state: active
 capability_profile:
   allowed_actions:
@@ -26,7 +25,7 @@ capability_profile:
   - data.trace-ledger
   - data.audit-findings
 movement_profile:
-  movement_policy_ref: policy.shogi-agent-legal-moves.v0.2
+  movement_policy_ref: policy.shogi-agent-legal-moves.v0.3
   max_hops_per_move: 1
   may_cross_security_zones: true
   may_enter_restricted_zones: true
@@ -46,3 +45,4 @@ human_axis_binding_ref: human-axis.wind-mission.primary
 created_at: '2026-07-27T00:00:00Z'
 metadata:
   canonical_symbol: gold
+
