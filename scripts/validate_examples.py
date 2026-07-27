@@ -88,7 +88,7 @@ def validate_piece_semantics(piece: dict[str, Any]) -> list[str]:
         )
 
     if piece["piece_type"] == "king" and piece["movement_profile"]["max_hops_per_move"] != 0:
-        errors.append("king: max_hops_per_move must be 0 in v0.2")
+        errors.append("king: max_hops_per_move must be 0 in v0.3")
 
     if piece["piece_type"] != "king" and "rewrite_human_axis" not in denied:
         errors.append("non-king piece: denied_actions must include 'rewrite_human_axis'")
@@ -207,6 +207,9 @@ def validate_board_semantics(
                 f"{nodes[node_id]['capacity']}"
             )
 
+    reserve_entry_ids = [item["reserve_entry_ref"] for item in board["reserve_pool"]]
+    errors.extend(ensure_unique(reserve_entry_ids, "reserve_pool.reserve_entry_ref"))
+
     for reserve_entry in board["reserve_pool"]:
         piece_id = reserve_entry["piece_profile_id"]
         if piece_id not in pieces:
@@ -214,6 +217,13 @@ def validate_board_semantics(
             continue
         if reserve_entry["agent_id"] != pieces[piece_id]["agent_id"]:
             errors.append(f"reserve entry '{piece_id}': agent_id does not match piece profile")
+        if reserve_entry["source_type"] == "captured" and not reserve_entry.get("capture_record_ref"):
+            errors.append(f"reserve entry '{piece_id}': captured source requires capture_record_ref")
+        if reserve_entry["readiness_state"] == "ready":
+            if not reserve_entry.get("sanitization_assessment_ref"):
+                errors.append(f"reserve entry '{piece_id}': ready state requires sanitization_assessment_ref")
+            if not reserve_entry.get("authorization_ref"):
+                errors.append(f"reserve entry '{piece_id}': ready state requires authorization_ref")
 
     if board["status"] in {"initializing", "active", "paused"} and active_kings_in_human_control != 1:
         errors.append("board: exactly one active king must occupy a human-control zone")
@@ -329,6 +339,21 @@ def validate_placement_semantics(
         errors.append("placement: piece may not enter restricted zones")
 
     if placement["source_location"] in {"external", "reserve"}:
+        if placement["source_location"] == "reserve":
+            reserve_matches = [
+                item for item in board["reserve_pool"]
+                if item["piece_profile_id"] == piece_id
+            ]
+            if not reserve_matches:
+                errors.append("placement: reserve source piece is not present in the board reserve pool")
+            else:
+                reserve_item = reserve_matches[0]
+                if reserve_item["readiness_state"] != "ready":
+                    errors.append("placement: reserve source must be in ready state")
+                if placement.get("reserve_entry_ref") != reserve_item["reserve_entry_ref"]:
+                    errors.append("placement: reserve_entry_ref does not match the current board reserve entry")
+                if placement["placement_kind"] != "redeployment":
+                    errors.append("placement: reserve source requires placement_kind 'redeployment'")
         matching_rules = [
             rule
             for rule in policy["initial_placement_rules"]
@@ -796,6 +821,281 @@ def validate_receipt_semantics(
     return errors
 
 
+
+def occupancy_by_piece(board: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {item["piece_profile_id"]: item for item in board["occupancies"]}
+
+
+def reserve_by_ref(board: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {item["reserve_entry_ref"]: item for item in board["reserve_pool"]}
+
+
+def validate_capture_semantics(
+    capture: dict[str, Any],
+    pieces: dict[str, dict[str, Any]],
+    boards: dict[str, dict[str, Any]],
+    receipts: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    before = boards.get(capture["board_state_before_ref"])
+    after = boards.get(capture.get("board_state_after_ref", ""))
+    receipt = receipts.get(capture["capturing_move_receipt_ref"])
+    capturing = pieces.get(capture["capturing_piece_profile_id"])
+    captured = pieces.get(capture["captured_piece_profile_id"])
+
+    if before is None:
+        return ["capture: board_state_before_ref does not resolve"]
+    if capture["mission_id"] != before["mission_id"]:
+        errors.append("capture: mission_id does not match the source board")
+    if capture["board_revision_before"] != before["board_revision"]:
+        errors.append("capture: board_revision_before does not match the source board")
+    if capturing is None:
+        errors.append("capture: capturing_piece_profile_id does not resolve")
+    elif capture["capturing_agent_id"] != capturing["agent_id"]:
+        errors.append("capture: capturing_agent_id does not match piece profile")
+    if captured is None:
+        errors.append("capture: captured_piece_profile_id does not resolve")
+    elif capture["captured_agent_id"] != captured["agent_id"]:
+        errors.append("capture: captured_agent_id does not match piece profile")
+    if capture["capturing_piece_profile_id"] == capture["captured_piece_profile_id"]:
+        errors.append("capture: a piece cannot capture itself")
+    if captured and captured["piece_type"] == "king":
+        errors.append("capture: the human-axis king cannot be captured")
+
+    before_occ = occupancy_by_piece(before)
+    capturing_occ = before_occ.get(capture["capturing_piece_profile_id"])
+    captured_occ = before_occ.get(capture["captured_piece_profile_id"])
+    if capturing_occ is None:
+        errors.append("capture: capturing piece is not active on the source board")
+    if captured_occ is None:
+        errors.append("capture: captured piece is not active on the source board")
+    elif captured_occ["node_id"] != capture["capture_node_id"]:
+        errors.append("capture: captured piece does not occupy capture_node_id")
+
+    if capturing and capturing_occ:
+        effective = capturing_occ.get("effective_side", capturing["side"])
+        if capture["receiving_side"] != effective:
+            errors.append("capture: receiving_side does not match the capturing piece control side")
+    if captured and captured_occ:
+        effective = captured_occ.get("effective_side", captured["side"])
+        if capture["captured_from_side"] != effective:
+            errors.append("capture: captured_from_side does not match board control state")
+    if capture["captured_from_side"] == capture["receiving_side"]:
+        errors.append("capture: capture requires a change of control side")
+
+    if receipt is None:
+        errors.append("capture: capturing_move_receipt_ref does not resolve")
+    else:
+        if receipt["outcome"] != "executed" or not receipt["board_update_applied"]:
+            errors.append("capture: capture requires an executed move receipt")
+        if receipt["piece_profile_id"] != capture["capturing_piece_profile_id"]:
+            errors.append("capture: move receipt does not belong to the capturing piece")
+        if receipt["agent_id"] != capture["capturing_agent_id"]:
+            errors.append("capture: move receipt agent does not match capturing agent")
+        if receipt["target_node_id"] != capture["capture_node_id"]:
+            errors.append("capture: move receipt target does not match capture_node_id")
+        if receipt["board_state_before_ref"] != before["board_state_id"]:
+            errors.append("capture: move receipt source board does not match")
+        if capture.get("board_state_after_ref") != receipt.get("board_state_after_ref"):
+            errors.append("capture: board_state_after_ref does not match move receipt")
+        if parse_time(capture["recorded_at"]) < parse_time(receipt["recorded_at"]):
+            errors.append("capture: recorded_at cannot precede the move receipt")
+
+    if capture["capture_outcome"] == "captured":
+        if after is None:
+            errors.append("capture: captured outcome requires a resolvable after board")
+        else:
+            if after["board_revision"] != before["board_revision"] + 1:
+                errors.append("capture: after-board revision must increment by one")
+            after_occ = occupancy_by_piece(after)
+            if capture["captured_piece_profile_id"] in after_occ:
+                errors.append("capture: captured piece must be removed from active occupancies")
+            moved = after_occ.get(capture["capturing_piece_profile_id"])
+            if moved is None or moved["node_id"] != capture["capture_node_id"]:
+                errors.append("capture: capturing piece must occupy capture_node_id after capture")
+            reserve_matches = [
+                item for item in after["reserve_pool"]
+                if item["piece_profile_id"] == capture["captured_piece_profile_id"]
+            ]
+            if not reserve_matches:
+                errors.append("capture: captured piece must enter the after-board reserve pool")
+            else:
+                item = reserve_matches[0]
+                if item["readiness_state"] != "quarantined":
+                    errors.append("capture: captured piece must enter reserve as quarantined")
+                if item.get("capture_record_ref") != capture["capture_record_id"]:
+                    errors.append("capture: after-board reserve entry does not reference capture record")
+        nodes = {node["node_id"]: node for node in before["nodes"]}
+        zones = {zone["zone_id"]: zone for zone in before["zones"]}
+        qnode = nodes.get(capture.get("quarantine_node_id", ""))
+        if qnode is None or zones.get(qnode["zone_id"], {}).get("zone_type") != "quarantine":
+            errors.append("capture: quarantine_node_id must resolve to a quarantine zone")
+
+    return errors
+
+
+def validate_sanitization_semantics(
+    assessment: dict[str, Any],
+    captures: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    capture = captures.get(assessment["capture_record_ref"])
+    if capture is None:
+        return ["sanitization: capture_record_ref does not resolve"]
+    for field in ("mission_id", "piece_profile_id", "agent_id"):
+        capture_field = {"piece_profile_id": "captured_piece_profile_id", "agent_id": "captured_agent_id"}.get(field, field)
+        if assessment[field] != capture[capture_field]:
+            errors.append(f"sanitization: {field} does not match capture record")
+    if assessment["quarantine_node_id"] != capture.get("quarantine_node_id"):
+        errors.append("sanitization: quarantine_node_id does not match capture record")
+    checks = assessment["checks"]
+    actual_all = all(value for key, value in checks.items() if key != "all_checks_passed")
+    if checks["all_checks_passed"] != actual_all:
+        errors.append("sanitization: all_checks_passed does not match individual checks")
+    if assessment["decision"] == "passed" and not actual_all:
+        errors.append("sanitization: passed decision requires every check to pass")
+    if assessment["decision"] == "failed" and actual_all:
+        errors.append("sanitization: failed decision requires at least one failed check")
+    if assessment["decision"] == "human-review" and not assessment.get("human_review_ref"):
+        errors.append("sanitization: human-review decision requires human_review_ref")
+    required_actions = {"isolate_memory", "revoke_credentials", "detach_tools", "clear_data_scopes"}
+    if assessment["decision"] == "passed" and not required_actions.issubset(set(assessment["actions_applied"])):
+        errors.append("sanitization: passed decision is missing required sanitization actions")
+    started = parse_time(assessment["assessment_started_at"]); completed = parse_time(assessment["assessment_completed_at"]); captured_at = parse_time(capture["recorded_at"])
+    if started < captured_at:
+        errors.append("sanitization: assessment cannot start before capture")
+    if completed < started:
+        errors.append("sanitization: assessment_completed_at cannot precede assessment_started_at")
+    return errors
+
+
+def validate_reserve_entry_semantics(
+    entry: dict[str, Any],
+    pieces: dict[str, dict[str, Any]],
+    boards: dict[str, dict[str, Any]],
+    captures: dict[str, dict[str, Any]],
+    assessments: dict[str, dict[str, Any]],
+    previous_entries: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    piece = pieces.get(entry["piece_profile_id"]); board = boards.get(entry["board_state_ref"]); capture = captures.get(entry.get("capture_record_ref", "")); assessment = assessments.get(entry.get("sanitization_assessment_ref", ""))
+    if piece is None:
+        errors.append("reserve: piece_profile_id does not resolve")
+    elif entry["agent_id"] != piece["agent_id"]:
+        errors.append("reserve: agent_id does not match piece profile")
+    if board is None:
+        return errors + ["reserve: board_state_ref does not resolve"]
+    if entry["mission_id"] != board["mission_id"] or entry["board_revision"] != board["board_revision"]:
+        errors.append("reserve: board mission or revision does not match entry")
+    board_item = reserve_by_ref(board).get(entry["reserve_entry_id"])
+    if board_item is None:
+        errors.append("reserve: board reserve_pool does not contain reserve_entry_id")
+    else:
+        for field, board_field in (("piece_profile_id","piece_profile_id"),("agent_id","agent_id"),("assigned_side","effective_side"),("source_type","source_type"),("readiness_state","readiness_state")):
+            if entry[field] != board_item[board_field]:
+                errors.append(f"reserve: {field} does not match board reserve state")
+    if entry["piece_profile_id"] in occupancy_by_piece(board):
+        errors.append("reserve: piece cannot be active on the board and in reserve")
+    if entry["source_type"] == "captured":
+        if capture is None:
+            errors.append("reserve: captured source requires a valid capture_record_ref")
+        else:
+            if capture["captured_piece_profile_id"] != entry["piece_profile_id"] or capture["captured_agent_id"] != entry["agent_id"]:
+                errors.append("reserve: capture record does not identify this piece")
+            if entry["original_side"] != capture["captured_from_side"]:
+                errors.append("reserve: original_side does not match capture record")
+            if parse_time(entry["entered_at"]) < parse_time(capture["recorded_at"]):
+                errors.append("reserve: entered_at cannot precede capture")
+    prev_ref = entry.get("previous_reserve_entry_ref")
+    if prev_ref:
+        prev = previous_entries.get(prev_ref)
+        if prev is None:
+            errors.append("reserve: previous_reserve_entry_ref does not resolve")
+        elif prev["piece_profile_id"] != entry["piece_profile_id"]:
+            errors.append("reserve: previous entry belongs to a different piece")
+    if entry["readiness_state"] == "quarantined":
+        if entry["authority_state"] != "revoked" or entry["memory_state"] != "isolated" or entry["assigned_side"] != "neutral":
+            errors.append("reserve: quarantined state requires revoked authority, isolated memory, and neutral side")
+    if entry["readiness_state"] == "ready":
+        if assessment is None or assessment["decision"] != "passed":
+            errors.append("reserve: ready state requires a passed sanitization assessment")
+        elif assessment["piece_profile_id"] != entry["piece_profile_id"]:
+            errors.append("reserve: sanitization assessment belongs to a different piece")
+        if entry["authority_state"] != "re-authorized":
+            errors.append("reserve: ready state requires re-authorized authority")
+        if entry["memory_state"] != "sanitized":
+            errors.append("reserve: ready state requires sanitized memory")
+        if not entry.get("authorization_ref"):
+            errors.append("reserve: ready state requires authorization_ref")
+        if not entry.get("human_review_ref"):
+            errors.append("reserve: captured control transfer requires human_review_ref")
+        if entry["assigned_side"] == "neutral":
+            errors.append("reserve: ready state requires an assigned operational side")
+        if not entry.get("ready_at"):
+            errors.append("reserve: ready state requires ready_at")
+        elif assessment and parse_time(entry["ready_at"]) < parse_time(assessment["assessment_completed_at"]):
+            errors.append("reserve: ready_at cannot precede sanitization completion")
+    return errors
+
+
+def validate_redeployment_semantics(
+    record: dict[str, Any],
+    reserves: dict[str, dict[str, Any]],
+    assessments: dict[str, dict[str, Any]],
+    placements: dict[str, dict[str, Any]],
+    boards: dict[str, dict[str, Any]],
+    pieces: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    reserve = reserves.get(record["reserve_entry_ref"]); assessment = assessments.get(record["sanitization_assessment_ref"]); placement = placements.get(record["placement_record_ref"]); before = boards.get(record["board_state_before_ref"]); after = boards.get(record["board_state_after_ref"]); piece = pieces.get(record["piece_profile_id"])
+    if reserve is None:
+        return ["redeployment: reserve_entry_ref does not resolve"]
+    if reserve["readiness_state"] != "ready" or reserve["authority_state"] != "re-authorized" or reserve["memory_state"] != "sanitized":
+        errors.append("redeployment: reserve entry is not ready for deployment")
+    for field in ("mission_id","piece_profile_id","agent_id","assigned_side"):
+        if record[field] != reserve[field]:
+            errors.append(f"redeployment: {field} does not match reserve entry")
+    if assessment is None or assessment["decision"] != "passed":
+        errors.append("redeployment: sanitization_assessment_ref must resolve to a passed assessment")
+    elif reserve.get("sanitization_assessment_ref") != assessment["sanitization_assessment_id"]:
+        errors.append("redeployment: assessment does not match reserve entry")
+    if piece is None or piece["piece_type"] == "king":
+        errors.append("redeployment: invalid or protected piece profile")
+    if before is None or after is None:
+        return errors + ["redeployment: before or after board does not resolve"]
+    if record["board_revision_before"] != before["board_revision"] or record["board_revision_after"] != after["board_revision"]:
+        errors.append("redeployment: recorded board revisions do not match board states")
+    if after["board_revision"] != before["board_revision"] + 1:
+        errors.append("redeployment: after-board revision must increment by one")
+    if record["reserve_entry_ref"] not in reserve_by_ref(before):
+        errors.append("redeployment: reserve entry is absent from before board")
+    if record["piece_profile_id"] in occupancy_by_piece(before):
+        errors.append("redeployment: piece is already active before redeployment")
+    if record["reserve_entry_ref"] in reserve_by_ref(after):
+        errors.append("redeployment: applied entry must be removed from after-board reserve")
+    occ = occupancy_by_piece(after).get(record["piece_profile_id"])
+    if occ is None or occ["node_id"] != record["target_node_id"]:
+        errors.append("redeployment: after board does not place the piece at target_node_id")
+    elif occ.get("effective_side", piece["side"] if piece else None) != record["assigned_side"]:
+        errors.append("redeployment: after-board effective side does not match assigned_side")
+    if placement is None:
+        errors.append("redeployment: placement_record_ref does not resolve")
+    else:
+        expected={"mission_id":record["mission_id"],"piece_profile_id":record["piece_profile_id"],"agent_id":record["agent_id"],"target_node_id":record["target_node_id"],"board_state_before_ref":record["board_state_before_ref"],"board_state_after_ref":record["board_state_after_ref"],"reserve_entry_ref":record["reserve_entry_ref"]}
+        for field,value in expected.items():
+            if placement.get(field)!=value: errors.append(f"redeployment: {field} does not match placement record")
+        if placement["source_location"]!="reserve" or placement["placement_kind"]!="redeployment" or placement["placement_status"]!="applied":
+            errors.append("redeployment: placement must be an applied reserve redeployment")
+        if placement.get("authorization_ref") != record["authorization_ref"]:
+            errors.append("redeployment: authorization_ref does not match placement")
+        if placement.get("human_review_ref") != record.get("human_review_ref"):
+            errors.append("redeployment: human_review_ref does not match placement")
+    if reserve["original_side"] != record["assigned_side"] and not record.get("human_review_ref"):
+        errors.append("redeployment: control-side change requires human_review_ref")
+    if parse_time(record["applied_at"]) < parse_time(record["requested_at"]):
+        errors.append("redeployment: applied_at cannot precede requested_at")
+    return errors
+
 def report_errors(prefix: str, errors: list[str]) -> None:
     for error in errors:
         print(f"  - {prefix}: {error}")
@@ -831,7 +1131,7 @@ def validate_pass_document(
 
 
 def main() -> int:
-    print("=== Shogi Agent Orchestration Protocol v0.2 Validation ===")
+    print("=== Shogi Agent Orchestration Protocol v0.3 Validation ===")
     print()
 
     schemas = {
@@ -842,89 +1142,84 @@ def main() -> int:
         "proposal": load_schema("agent-move-proposal.schema.json"),
         "evaluation": load_schema("legal-move-evaluation.schema.json"),
         "receipt": load_schema("agent-move-receipt.schema.json"),
+        "capture": load_schema("agent-capture-record.schema.json"),
+        "sanitization": load_schema("agent-sanitization-assessment.schema.json"),
+        "reserve": load_schema("reserve-pool-entry.schema.json"),
+        "redeployment": load_schema("agent-redeployment-record.schema.json"),
     }
     failures: list[str] = []
 
     pieces: dict[str, dict[str, Any]] = {}
     for path in sorted(PASS_DIR.glob("piece-profile.*.example.yaml")):
-        document = validate_pass_document(
-            path,
-            schemas["piece"],
-            validate_piece_semantics,
-            failures,
-        )
+        document = validate_pass_document(path, schemas["piece"], validate_piece_semantics, failures)
         if document:
             pieces[document["piece_profile_id"]] = document
 
     policy_path = PASS_DIR / "legal-move-policy.example.yaml"
-    policy = validate_pass_document(
-        policy_path,
-        schemas["policy"],
-        validate_policy_semantics,
-        failures,
-    )
+    policy = validate_pass_document(policy_path, schemas["policy"], validate_policy_semantics, failures)
     if policy is None:
         raise ValidationFailure("valid legal move policy is required for semantic checks")
 
-    board_path = PASS_DIR / "board-state.example.yaml"
-    board = validate_pass_document(
-        board_path,
-        schemas["board"],
-        lambda document: validate_board_semantics(document, pieces),
-        failures,
-    )
-    if board is None:
-        raise ValidationFailure("valid board state is required for semantic checks")
+    boards: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("board-state*.example.yaml")):
+        document = validate_pass_document(path, schemas["board"], lambda item: validate_board_semantics(item, pieces), failures)
+        if document:
+            boards[document["board_state_id"]] = document
+    base_board = boards.get("board-state.wind-mission.0001")
+    if base_board is None:
+        raise ValidationFailure("base board state is required for semantic checks")
 
     proposals: dict[str, dict[str, Any]] = {}
     for path in sorted(PASS_DIR.glob("move-proposal.*.example.yaml")):
-        document = validate_pass_document(
-            path,
-            schemas["proposal"],
-            lambda item: validate_proposal_semantics(item, pieces, board, policy),
-            failures,
-        )
+        raw = load_document(path); board = boards.get(raw["board_state_ref"], base_board)
+        document = validate_pass_document(path, schemas["proposal"], lambda item, b=board: validate_proposal_semantics(item, pieces, b, policy), failures)
         if document:
             proposals[document["move_proposal_id"]] = document
 
     evaluations: dict[str, dict[str, Any]] = {}
     for path in sorted(PASS_DIR.glob("legal-move-evaluation.*.example.yaml")):
-        document = validate_pass_document(
-            path,
-            schemas["evaluation"],
-            lambda item: validate_evaluation_semantics(
-                item, proposals, pieces, board, policy
-            ),
-            failures,
-        )
+        raw = load_document(path); board = boards.get(raw["board_state_ref"], base_board)
+        document = validate_pass_document(path, schemas["evaluation"], lambda item, b=board: validate_evaluation_semantics(item, proposals, pieces, b, policy), failures)
         if document:
             evaluations[document["move_evaluation_id"]] = document
 
     placements: dict[str, dict[str, Any]] = {}
     for path in sorted(PASS_DIR.glob("placement-record*.example.yaml")):
-        document = validate_pass_document(
-            path,
-            schemas["placement"],
-            lambda item: validate_placement_semantics(
-                item, pieces, board, policy, proposals, evaluations
-            ),
-            failures,
-        )
+        raw = load_document(path); board = boards.get(raw["board_state_before_ref"], base_board)
+        document = validate_pass_document(path, schemas["placement"], lambda item, b=board: validate_placement_semantics(item, pieces, b, policy, proposals, evaluations), failures)
         if document:
             placements[document["placement_record_id"]] = document
 
     receipts: dict[str, dict[str, Any]] = {}
     for path in sorted(PASS_DIR.glob("agent-move-receipt.*.example.yaml")):
-        document = validate_pass_document(
-            path,
-            schemas["receipt"],
-            lambda item: validate_receipt_semantics(
-                item, proposals, evaluations, placements, pieces, board
-            ),
-            failures,
-        )
+        raw = load_document(path); board = boards.get(raw["board_state_before_ref"], base_board)
+        document = validate_pass_document(path, schemas["receipt"], lambda item, b=board: validate_receipt_semantics(item, proposals, evaluations, placements, pieces, b), failures)
         if document:
             receipts[document["move_receipt_id"]] = document
+
+    captures: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("agent-capture-record*.example.yaml")):
+        document = validate_pass_document(path, schemas["capture"], lambda item: validate_capture_semantics(item, pieces, boards, receipts), failures)
+        if document:
+            captures[document["capture_record_id"]] = document
+
+    assessments: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("agent-sanitization-assessment*.example.yaml")):
+        document = validate_pass_document(path, schemas["sanitization"], lambda item: validate_sanitization_semantics(item, captures), failures)
+        if document:
+            assessments[document["sanitization_assessment_id"]] = document
+
+    reserves: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("reserve-pool-entry.*.example.yaml")):
+        document = validate_pass_document(path, schemas["reserve"], lambda item: validate_reserve_entry_semantics(item, pieces, boards, captures, assessments, reserves), failures)
+        if document:
+            reserves[document["reserve_entry_id"]] = document
+
+    redeployments: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("agent-redeployment-record*.example.yaml")):
+        document = validate_pass_document(path, schemas["redeployment"], lambda item: validate_redeployment_semantics(item, reserves, assessments, placements, boards, pieces), failures)
+        if document:
+            redeployments[document["redeployment_record_id"]] = document
 
     fail_cases = [
         (FAIL_DIR / "piece-profile.invalid-piece-type.example.yaml", "piece", "schema"),
@@ -935,62 +1230,53 @@ def main() -> int:
         (FAIL_DIR / "legal-move-evaluation.false-allow.example.yaml", "evaluation", "semantic"),
         (FAIL_DIR / "agent-move-receipt.missing-authorization.example.yaml", "receipt", "semantic"),
         (FAIL_DIR / "agent-move-receipt.executed-after-denial.example.yaml", "receipt", "schema"),
+        (FAIL_DIR / "agent-capture-record.king-capture.example.yaml", "capture", "semantic"),
+        (FAIL_DIR / "agent-sanitization-assessment.false-pass.example.yaml", "sanitization", "semantic"),
+        (FAIL_DIR / "reserve-pool-entry.unsafe-ready.example.yaml", "reserve", "semantic"),
+        (FAIL_DIR / "agent-redeployment-record.side-mismatch.example.yaml", "redeployment", "semantic"),
     ]
 
     for path, schema_key, expected_stage in fail_cases:
         print(f"[validate-fail] {path.relative_to(ROOT)}")
         document = load_document(path)
         errors = schema_errors(document, schemas[schema_key])
-
         if expected_stage == "schema":
             if errors:
-                print("[expected-schema-error]")
-                report_errors(str(path.relative_to(ROOT)), errors)
+                print("[expected-schema-error]"); report_errors(str(path.relative_to(ROOT)), errors)
             else:
-                print("[unexpected-pass] expected a schema error")
-                failures.append(str(path))
-            print()
-            continue
-
+                print("[unexpected-pass] expected a schema error"); failures.append(str(path))
+            print(); continue
         if errors:
-            print("[unexpected-schema-error]")
-            report_errors(str(path.relative_to(ROOT)), errors)
-            failures.append(str(path))
-            print()
-            continue
-
+            print("[unexpected-schema-error]"); report_errors(str(path.relative_to(ROOT)), errors); failures.append(str(path)); print(); continue
         print("[schema-ok]")
         if schema_key == "board":
             semantic = validate_board_semantics(document, pieces)
         elif schema_key == "placement":
-            semantic = validate_placement_semantics(
-                document, pieces, board, policy, proposals, evaluations
-            )
+            board = boards.get(document["board_state_before_ref"], base_board); semantic = validate_placement_semantics(document, pieces, board, policy, proposals, evaluations)
         elif schema_key == "proposal":
-            semantic = validate_proposal_semantics(document, pieces, board, policy)
+            board = boards.get(document["board_state_ref"], base_board); semantic = validate_proposal_semantics(document, pieces, board, policy)
         elif schema_key == "evaluation":
-            semantic = validate_evaluation_semantics(
-                document, proposals, pieces, board, policy
-            )
+            board = boards.get(document["board_state_ref"], base_board); semantic = validate_evaluation_semantics(document, proposals, pieces, board, policy)
         elif schema_key == "receipt":
-            semantic = validate_receipt_semantics(
-                document, proposals, evaluations, placements, pieces, board
-            )
+            board = boards.get(document["board_state_before_ref"], base_board); semantic = validate_receipt_semantics(document, proposals, evaluations, placements, pieces, board)
+        elif schema_key == "capture":
+            semantic = validate_capture_semantics(document, pieces, boards, receipts)
+        elif schema_key == "sanitization":
+            semantic = validate_sanitization_semantics(document, captures)
+        elif schema_key == "reserve":
+            semantic = validate_reserve_entry_semantics(document, pieces, boards, captures, assessments, reserves)
+        elif schema_key == "redeployment":
+            semantic = validate_redeployment_semantics(document, reserves, assessments, placements, boards, pieces)
         else:
             semantic = []
-
         if semantic:
-            print("[expected-semantic-error]")
-            report_errors(str(path.relative_to(ROOT)), semantic)
+            print("[expected-semantic-error]"); report_errors(str(path.relative_to(ROOT)), semantic)
         else:
-            print("[unexpected-pass] expected a semantic error")
-            failures.append(str(path))
+            print("[unexpected-pass] expected a semantic error"); failures.append(str(path))
         print()
 
     if failures:
-        print("Validation failed.")
-        return 1
-
+        print("Validation failed."); return 1
     print("All schemas, pass examples, and expected-fail examples validated successfully.")
     return 0
 
