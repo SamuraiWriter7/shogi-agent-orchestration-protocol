@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-board-state.schema.json",
   "title": "Agent Board State",
-  "description": "Represents the current mission board, its zones, nodes, active occupancies, reserve pool, and human-axis anchor.",
+  "description": "Represents a mission board, including active occupancies, quarantine, and v0.3 reserve-state references.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -23,7 +23,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.2.0"
+      "const": "0.3.0"
     },
     "board_state_id": {
       "$ref": "#/$defs/identifier"
@@ -239,6 +239,16 @@
         "since": {
           "type": "string",
           "format": "date-time"
+        },
+        "effective_side": {
+          "enum": [
+            "sente",
+            "gote",
+            "neutral"
+          ]
+        },
+        "controller_ref": {
+          "$ref": "#/$defs/identifier"
         }
       }
     },
@@ -246,24 +256,55 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "reserve_entry_ref",
         "piece_profile_id",
         "agent_id",
+        "effective_side",
+        "source_type",
         "readiness_state",
         "entered_at"
       ],
       "properties": {
+        "reserve_entry_ref": {
+          "$ref": "#/$defs/identifier"
+        },
         "piece_profile_id": {
           "$ref": "#/$defs/identifier"
         },
         "agent_id": {
           "$ref": "#/$defs/identifier"
         },
+        "effective_side": {
+          "enum": [
+            "sente",
+            "gote",
+            "neutral"
+          ]
+        },
+        "source_type": {
+          "enum": [
+            "captured",
+            "withdrawn",
+            "handoff",
+            "external"
+          ]
+        },
         "readiness_state": {
           "enum": [
             "ready",
             "review-required",
-            "quarantined"
+            "quarantined",
+            "blocked"
           ]
+        },
+        "capture_record_ref": {
+          "$ref": "#/$defs/identifier"
+        },
+        "sanitization_assessment_ref": {
+          "$ref": "#/$defs/identifier"
+        },
+        "authorization_ref": {
+          "$ref": "#/$defs/identifier"
         },
         "entered_at": {
           "type": "string",
