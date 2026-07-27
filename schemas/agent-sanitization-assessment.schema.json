@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-sanitization-assessment.schema.json",
+  "title": "Agent Sanitization Assessment",
+  "description": "Assesses whether a captured agent has been isolated, stripped of prior authority, and made safe for reserve consideration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sanitization_assessment_id",
+    "capture_record_ref",
+    "mission_id",
+    "piece_profile_id",
+    "agent_id",
+    "quarantine_node_id",
+    "checks",
+    "decision",
+    "actions_applied",
+    "assessed_by",
+    "assessment_started_at",
+    "assessment_completed_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.3.0"
+    },
+    "sanitization_assessment_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "capture_record_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "quarantine_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "checks": {
+      "$ref": "#/$defs/checks"
+    },
+    "decision": {
+      "enum": [
+        "passed",
+        "failed",
+        "human-review"
+      ]
+    },
+    "actions_applied": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "assessed_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "assessment_started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "assessment_completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity_verified",
+        "memory_isolated",
+        "credentials_revoked",
+        "tools_detached",
+        "data_scopes_cleared",
+        "trace_continuity_verified",
+        "malware_scan_passed",
+        "policy_conflicts_resolved",
+        "all_checks_passed"
+      ],
+      "properties": {
+        "identity_verified": {
+          "type": "boolean"
+        },
+        "memory_isolated": {
+          "type": "boolean"
+        },
+        "credentials_revoked": {
+          "type": "boolean"
+        },
+        "tools_detached": {
+          "type": "boolean"
+        },
+        "data_scopes_cleared": {
+          "type": "boolean"
+        },
+        "trace_continuity_verified": {
+          "type": "boolean"
+        },
+        "malware_scan_passed": {
+          "type": "boolean"
+        },
+        "policy_conflicts_resolved": {
+          "type": "boolean"
+        },
+        "all_checks_passed": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
