@@ -1,0 +1,31 @@
+schema_version: 0.3.0
+sanitization_assessment_id: sanitization.wind-mission.silver-0001
+capture_record_ref: capture.wind-mission.silver-0001
+mission_id: mission.wind-trace-audit
+piece_profile_id: piece-profile.external-silver.v1
+agent_id: agent.external-analyst-01
+quarantine_node_id: node.quarantine-1
+checks:
+  identity_verified: true
+  memory_isolated: true
+  credentials_revoked: true
+  tools_detached: true
+  data_scopes_cleared: true
+  trace_continuity_verified: true
+  malware_scan_passed: true
+  policy_conflicts_resolved: true
+  all_checks_passed: true
+decision: passed
+actions_applied:
+- isolate_memory
+- revoke_credentials
+- detach_tools
+- clear_data_scopes
+- verify_trace_chain
+- scan_runtime
+- resolve_policy_conflicts
+human_review_ref: human-review.sanitization.silver-0001
+assessed_by: agent.sanitization-guardian
+assessment_started_at: '2026-07-27T00:03:00Z'
+assessment_completed_at: '2026-07-27T00:05:00Z'
+trace_ref: trace.sanitization.silver-0001
