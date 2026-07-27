@@ -1,0 +1,42 @@
+schema_version: 0.2.0
+move_evaluation_id: move-evaluation.wind-mission.gold-review-0001
+move_proposal_ref: move-proposal.wind-mission.gold-review-0001
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0001
+evaluated_board_revision: 1
+piece_profile_id: piece-profile.audit-gold.v1
+agent_id: agent.audit-guardian-01
+source_node_id: node.audit-1
+target_node_id: node.human-gate-1
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.2
+decision: human-review
+matched_rule_id: move.gold.audit-to-human-control
+route:
+  path_node_ids:
+  - node.audit-1
+  - node.human-gate-1
+  hop_count: 1
+checks:
+  mission_in_scope: true
+  board_reference_current: true
+  piece_registered: true
+  agent_matches_piece: true
+  source_matches_board: true
+  target_available: true
+  target_zone_allows_piece: true
+  route_reachable: true
+  within_piece_hop_limit: true
+  movement_rule_matched: true
+  required_capabilities_present: true
+  security_boundary_allowed: true
+  restricted_zone_entry_allowed: true
+  resource_budget_satisfied: true
+  all_checks_passed: true
+required_controls:
+  authorization_required: true
+  human_review_required: true
+evaluation_reasons: []
+evaluated_by: agent.legal-move-evaluator
+evaluated_at: '2026-07-27T00:03:01Z'
+valid_until: '2026-07-27T00:08:01Z'
+trace_ref: trace.move-evaluation.gold-review-0001
