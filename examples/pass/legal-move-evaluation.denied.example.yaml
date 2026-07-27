@@ -1,4 +1,4 @@
-schema_version: 0.2.0
+schema_version: 0.3.0
 move_evaluation_id: move-evaluation.wind-mission.denied-0001
 move_proposal_ref: move-proposal.wind-mission.denied-0001
 mission_id: mission.wind-trace-audit
@@ -8,7 +8,7 @@ piece_profile_id: piece-profile.trace-pawn.v1
 agent_id: agent.trace-worker-01
 source_node_id: node.planning-1
 target_node_id: node.settlement-1
-legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.2
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.3
 decision: deny
 route:
   path_node_ids:
