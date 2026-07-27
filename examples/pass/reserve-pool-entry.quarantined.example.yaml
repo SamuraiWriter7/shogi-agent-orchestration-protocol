@@ -1,0 +1,17 @@
+schema_version: 0.3.0
+reserve_entry_id: reserve-entry.wind-mission.silver.quarantined-0001
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0002
+board_revision: 2
+piece_profile_id: piece-profile.external-silver.v1
+agent_id: agent.external-analyst-01
+source_type: captured
+capture_record_ref: capture.wind-mission.silver-0001
+original_side: gote
+assigned_side: neutral
+readiness_state: quarantined
+authority_state: revoked
+memory_state: isolated
+entered_by: agent.board-controller
+entered_at: '2026-07-27T00:02:04Z'
+trace_ref: trace.reserve.silver.quarantined-0001
