@@ -1,0 +1,27 @@
+schema_version: 0.2.0
+move_proposal_id: move-proposal.wind-mission.gold-review-0001
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0001
+board_revision: 1
+piece_profile_id: piece-profile.audit-gold.v1
+agent_id: agent.audit-guardian-01
+source_node_id: node.audit-1
+target_node_id: node.human-gate-1
+move_kind: reposition
+requested_action: request_human_review
+requested_capabilities:
+- request_human_review
+estimated_resource_usage:
+  tokens: 5000
+  cost: 0.3
+  currency: USD
+  duration_seconds: 120
+  concurrent_actions: 1
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.2
+proposal_status: proposed
+priority: high
+proposed_by: agent.board-controller
+proposal_reason: Escalate an audit finding to the human-control gate for an explicit decision.
+proposed_at: '2026-07-27T00:03:00Z'
+valid_until: '2026-07-27T00:13:00Z'
+trace_ref: trace.move-proposal.gold-review-0001
