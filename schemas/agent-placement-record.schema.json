@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-placement-record.schema.json",
+  "title": "Agent Placement Record",
+  "description": "Records an initial placement or board movement of a role-bounded agent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "placement_record_id",
+    "mission_id",
+    "board_state_before_ref",
+    "board_state_after_ref",
+    "piece_profile_id",
+    "agent_id",
+    "source_location",
+    "target_node_id",
+    "placement_kind",
+    "placement_status",
+    "requested_by",
+    "placement_reason",
+    "legal_move_policy_ref",
+    "authorization_required",
+    "requested_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "placement_record_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_before_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_after_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "source_location": {
+      "enum": ["board", "reserve", "external"]
+    },
+    "source_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "target_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "placement_kind": {
+      "enum": ["initial", "reposition", "manual-correction"]
+    },
+    "placement_status": {
+      "enum": ["proposed", "authorized", "applied", "rejected"]
+    },
+    "requested_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "placement_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "legal_move_policy_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "authorization_required": {
+      "type": "boolean"
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "applied_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source_location": {
+            "const": "board"
+          }
+        },
+        "required": ["source_location"]
+      },
+      "then": {
+        "required": ["source_node_id"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authorization_required": {
+            "const": true
+          }
+        },
+        "required": ["authorization_required"]
+      },
+      "then": {
+        "required": ["authorization_ref"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "placement_status": {
+            "const": "applied"
+          }
+        },
+        "required": ["placement_status"]
+      },
+      "then": {
+        "required": ["applied_at"]
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    }
+  }
+}
