@@ -1,4 +1,4 @@
-schema_version: 0.1.0
+schema_version: 0.2.0
 placement_record_id: placement.wind-mission.illegal-transition
 mission_id: mission.wind-trace-audit
 board_state_before_ref: board-state.wind-mission.0001
