@@ -1,0 +1,22 @@
+schema_version: 0.3.0
+redeployment_record_id: redeployment.wind-mission.silver.side-mismatch
+mission_id: mission.wind-trace-audit
+reserve_entry_ref: reserve-entry.wind-mission.silver.ready-0001
+sanitization_assessment_ref: sanitization.wind-mission.silver-0001
+piece_profile_id: piece-profile.external-silver.v1
+agent_id: agent.external-analyst-01
+assigned_side: gote
+board_state_before_ref: board-state.wind-mission.0003
+board_revision_before: 3
+board_state_after_ref: board-state.wind-mission.0004
+board_revision_after: 4
+target_node_id: node.planning-1
+placement_record_ref: placement.wind-mission.redeploy-silver-0001
+redeployment_status: applied
+authorization_ref: authorization.redeploy.silver-0001
+authority_scope_binding_ref: authority-scope.redeployed-silver.bounded
+requested_by: agent.reserve-controller
+redeployment_reason: Return the sanitized silver agent to service with a new bounded controller and no inherited external authority.
+requested_at: '2026-07-27T00:06:00Z'
+applied_at: '2026-07-27T00:06:03Z'
+trace_ref: trace.redeployment.silver-0001
