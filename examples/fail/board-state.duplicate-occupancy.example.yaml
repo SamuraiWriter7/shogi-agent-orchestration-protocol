@@ -1,11 +1,12 @@
-schema_version: 0.1.0
+schema_version: 0.2.0
 board_state_id: board-state.wind-mission.duplicate-occupancy
 mission_id: mission.wind-trace-audit
 board_revision: 1
 status: active
 mission_objective: Demonstrate a capacity violation at the human gate.
 human_axis_ref: human-axis.wind-mission.primary
-board_policy_ref: policy.shogi-agent-legal-moves.v0.1
+board_policy_ref: policy.shogi-agent-legal-moves.v0.2
+
 zones:
   - zone_id: zone.human-control
     zone_type: human-control
@@ -14,6 +15,7 @@ zones:
     allowed_piece_types:
       - king
       - gold
+
 nodes:
   - node_id: node.human-gate-1
     zone_id: zone.human-control
@@ -21,17 +23,20 @@ nodes:
     capacity: 1
     enabled: true
     adjacent_node_ids: []
+
 occupancies:
   - piece_profile_id: piece-profile.human-axis-king.v1
     agent_id: agent.human-axis-guardian
     node_id: node.human-gate-1
     placement_state: active
     since: "2026-07-27T00:01:00Z"
+
   - piece_profile_id: piece-profile.audit-gold.v1
     agent_id: agent.audit-guardian-01
     node_id: node.human-gate-1
     placement_state: active
     since: "2026-07-27T00:01:01Z"
+
 reserve_pool: []
 recorded_by: agent.board-controller
 recorded_at: "2026-07-27T00:01:02Z"
