@@ -1,0 +1,27 @@
+schema_version: 0.2.0
+move_proposal_id: move-proposal.wind-mission.pawn-0001
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0001
+board_revision: 1
+piece_profile_id: piece-profile.trace-pawn.v1
+agent_id: agent.trace-worker-01
+source_node_id: node.planning-1
+target_node_id: node.execution-1
+move_kind: reposition
+requested_action: collect_trace
+requested_capabilities:
+- collect_trace
+estimated_resource_usage:
+  tokens: 8000
+  cost: 0.15
+  currency: USD
+  duration_seconds: 180
+  concurrent_actions: 1
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.2
+proposal_status: proposed
+priority: normal
+proposed_by: agent.board-controller
+proposal_reason: Advance the bounded trace worker from planning into the approved execution zone.
+proposed_at: '2026-07-27T00:02:00Z'
+valid_until: '2026-07-27T00:12:00Z'
+trace_ref: trace.move-proposal.pawn-0001
