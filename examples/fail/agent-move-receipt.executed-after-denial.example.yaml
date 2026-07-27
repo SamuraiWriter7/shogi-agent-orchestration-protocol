@@ -1,0 +1,28 @@
+schema_version: 0.2.0
+move_receipt_id: move-receipt.wind-mission.executed-after-denial-0001
+move_proposal_ref: move-proposal.wind-mission.denied-0001
+move_evaluation_ref: move-evaluation.wind-mission.denied-0001
+mission_id: mission.wind-trace-audit
+piece_profile_id: piece-profile.trace-pawn.v1
+agent_id: agent.trace-worker-01
+source_node_id: node.planning-1
+target_node_id: node.settlement-1
+evaluation_decision: deny
+outcome: executed
+matched_rule_id: move.pawn.planning-to-settlement.fake
+authorization_ref: authorization.move.illegal.0001
+placement_record_ref: placement.wind-mission.illegal-transition
+board_state_before_ref: board-state.wind-mission.0001
+board_state_after_ref: board-state.wind-mission.illegal
+board_update_applied: true
+actual_resource_usage:
+  tokens: 1000
+  cost: 0.02
+  currency: USD
+  duration_seconds: 20
+  concurrent_actions: 1
+execution_started_at: '2026-07-27T00:04:02Z'
+execution_completed_at: '2026-07-27T00:04:03Z'
+trace_ref: trace.move-receipt.executed-after-denial-0001
+recorded_by: agent.board-controller
+recorded_at: '2026-07-27T00:04:04Z'
