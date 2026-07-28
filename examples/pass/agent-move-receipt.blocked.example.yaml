@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 move_receipt_id: move-receipt.wind-mission.denied-0001
 move_proposal_ref: move-proposal.wind-mission.denied-0001
 move_evaluation_ref: move-evaluation.wind-mission.denied-0001
