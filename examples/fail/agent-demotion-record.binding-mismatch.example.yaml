@@ -1,0 +1,34 @@
+schema_version: 0.4.0
+demotion_record_id: demotion.wind-mission.binding-mismatch
+mission_id: mission.wind-trace-audit
+promotion_binding_ref: promotion-binding.wind-mission.trace-pawn-0001
+piece_profile_id: piece-profile.external-silver.v1
+agent_id: agent.external-analyst-01
+board_state_before_ref: board-state.wind-mission.0005
+board_revision_before: 5
+board_state_after_ref: board-state.wind-mission.0006
+board_revision_after: 6
+source_node_id: node.planning-1
+demotion_reason: manual
+demotion_status: applied
+revoked_capabilities:
+- validate_trace_chain
+- flag_trace_anomaly
+revoked_tools:
+- tool.trace-validator
+revoked_data_scopes:
+- data.audit-findings
+restored_authority_scope_ref: authority.external-analyst.bounded
+restored_resource_budget:
+  max_tokens_per_move: 12000
+  max_cost_per_move: 0.25
+  currency: USD
+  max_duration_seconds: 300
+  max_concurrent_actions: 2
+requested_by: agent.board-controller
+authorization_ref: authorization.demotion.trace-pawn-0001
+human_review_ref: human-review.demotion.trace-pawn-0001
+demotion_description: The temporary audit phase is complete; restore the pawn to its bounded trace-collection profile before the binding expires.
+requested_at: "2026-07-27T00:20:00Z"
+applied_at: "2026-07-27T00:20:02Z"
+trace_ref: trace.demotion.binding-mismatch
