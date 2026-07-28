@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 demotion_record_id: demotion.wind-mission.binding-mismatch
 mission_id: mission.wind-trace-audit
 promotion_binding_ref: promotion-binding.wind-mission.trace-pawn-0001
