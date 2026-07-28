@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 placement_record_id: placement.wind-mission.redeploy-silver-0001
 mission_id: mission.wind-trace-audit
 board_state_before_ref: board-state.wind-mission.0003
@@ -12,7 +12,7 @@ placement_status: applied
 reserve_entry_ref: reserve-entry.wind-mission.silver.ready-0001
 requested_by: agent.reserve-controller
 placement_reason: Redeploy the sanitized silver agent into the bounded planning zone under human control.
-legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.4
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.5
 authorization_required: true
 authorization_ref: authorization.redeploy.silver-0001
 human_review_ref: human-review.redeploy.silver-0001
