@@ -1,0 +1,35 @@
+schema_version: 0.4.0
+promotion_eligibility_assessment_id: promotion-assessment.wind-mission.king-false-eligible
+promotion_request_ref: promotion-request.wind-mission.king-forbidden
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0004
+evaluated_board_revision: 4
+piece_profile_id: piece-profile.human-axis-king.v1
+agent_id: agent.human-axis-guardian
+decision: eligible
+checks:
+  mission_in_scope: true
+  board_reference_current: true
+  piece_registered: true
+  agent_matches_piece: true
+  source_matches_board: true
+  piece_active: true
+  piece_promotable: true
+  promotion_type_allowed: true
+  zone_allows_promotion: true
+  capabilities_allowed: true
+  tools_allowed: true
+  data_scopes_allowed: true
+  authority_scope_allowed: true
+  resource_multiplier_within_limit: true
+  duration_within_limit: true
+  no_active_promotion: true
+  human_axis_protected: true
+  all_checks_passed: true
+required_controls:
+  authorization_required: true
+  human_review_required: false
+assessment_reasons: []
+evaluated_by: agent.compromised-promotion-auditor
+evaluated_at: "2026-07-27T00:07:10Z"
+valid_until: "2026-07-27T00:10:00Z"
