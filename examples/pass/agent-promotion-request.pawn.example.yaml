@@ -1,0 +1,30 @@
+schema_version: 0.4.0
+promotion_request_id: promotion-request.wind-mission.trace-pawn-0001
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0004
+board_revision: 4
+piece_profile_id: piece-profile.trace-pawn.v1
+agent_id: agent.trace-worker-01
+source_node_id: node.execution-1
+base_piece_type: pawn
+requested_promoted_piece_type: promoted-pawn
+requested_capability_additions:
+- validate_trace_chain
+- flag_trace_anomaly
+requested_tool_additions:
+- tool.trace-validator
+requested_data_scope_additions:
+- data.audit-findings
+requested_authority_scope_ref: authority.trace-worker.promoted
+requested_resource_budget:
+  max_tokens_per_move: 18000
+  max_cost_per_move: 0.5
+  currency: USD
+  max_duration_seconds: 480
+  max_concurrent_actions: 2
+requested_duration_seconds: 1800
+requested_by: agent.board-controller
+promotion_reason: Temporarily expand the trace worker so it can validate the capture lineage and flag anomalies during the audit phase.
+requested_at: "2026-07-27T00:07:00Z"
+valid_until: "2026-07-27T00:40:00Z"
+trace_ref: trace.promotion.trace-pawn-0001
