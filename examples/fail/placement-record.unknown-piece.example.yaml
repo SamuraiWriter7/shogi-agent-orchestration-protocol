@@ -1,4 +1,4 @@
-schema_version: 0.3.0
+schema_version: 0.4.0
 placement_record_id: placement.wind-mission.unknown-piece
 mission_id: mission.wind-trace-audit
 board_state_before_ref: board-state.wind-mission.0001
@@ -12,7 +12,7 @@ placement_kind: reposition
 placement_status: applied
 requested_by: agent.board-controller
 placement_reason: This example must fail because the piece profile is not registered.
-legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.3
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.4
 authorization_required: true
 authorization_ref: authorization.move.unknown.0001
 requested_at: '2026-07-27T00:02:00Z'
