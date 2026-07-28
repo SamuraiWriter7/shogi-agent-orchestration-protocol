@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.example/schemas/shogi-agent-mission-profile.schema.json",
+  "title": "Shogi Agent Mission Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "mission_profile_id",
+    "mission_id",
+    "mission_name",
+    "mission_objective",
+    "mission_status",
+    "human_axis_ref",
+    "initial_board_state_ref",
+    "legal_move_policy_ref",
+    "success_conditions",
+    "termination_conditions",
+    "required_artifact_types",
+    "max_board_revisions",
+    "timebox",
+    "conformance_profile_id",
+    "created_by",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.5.0"
+    },
+    "mission_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "mission_objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1200
+    },
+    "mission_status": {
+      "enum": [
+        "planned",
+        "active",
+        "paused",
+        "completed",
+        "terminated",
+        "aborted"
+      ]
+    },
+    "human_axis_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "initial_board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "legal_move_policy_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "success_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/success_condition"
+      }
+    },
+    "termination_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/termination_condition"
+      }
+    },
+    "required_artifact_types": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "piece-profile",
+          "board-state",
+          "legal-move-policy",
+          "move-proposal",
+          "legal-move-evaluation",
+          "move-receipt",
+          "placement-record",
+          "capture-record",
+          "sanitization-assessment",
+          "reserve-entry",
+          "redeployment-record",
+          "promotion-request",
+          "promotion-assessment",
+          "promotion-binding",
+          "demotion-record",
+          "termination-assessment",
+          "lifecycle-audit",
+          "conformance-report"
+        ]
+      }
+    },
+    "max_board_revisions": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    },
+    "timebox": {
+      "$ref": "#/$defs/timebox"
+    },
+    "conformance_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "created_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$"
+    },
+    "success_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_id",
+        "description",
+        "evaluation_mode",
+        "required"
+      ],
+      "properties": {
+        "condition_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "evaluation_mode": {
+          "enum": [
+            "evidence",
+            "metric",
+            "manual"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "termination_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_id",
+        "trigger_type",
+        "description",
+        "outcome",
+        "requires_human_confirmation"
+      ],
+      "properties": {
+        "condition_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "trigger_type": {
+          "enum": [
+            "success",
+            "human-stop",
+            "safety",
+            "resource-limit",
+            "timeout",
+            "no-legal-move"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "outcome": {
+          "enum": [
+            "complete",
+            "terminate",
+            "pause",
+            "human-review"
+          ]
+        },
+        "requires_human_confirmation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "timebox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "starts_at",
+        "expires_at"
+      ],
+      "properties": {
+        "starts_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
