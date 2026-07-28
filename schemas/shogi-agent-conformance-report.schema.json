@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.example/schemas/shogi-agent-conformance-report.schema.json",
+  "title": "Shogi Agent Conformance Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "conformance_report_id",
+    "conformance_profile_id",
+    "mission_profile_ref",
+    "mission_id",
+    "final_board_state_ref",
+    "termination_assessment_ref",
+    "lifecycle_audit_ref",
+    "checks",
+    "conformance_status",
+    "release_decision",
+    "evidence_refs",
+    "generated_by",
+    "generated_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.5.0"
+    },
+    "conformance_report_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "conformance_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_profile_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "final_board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "termination_assessment_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "lifecycle_audit_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "checks": {
+      "$ref": "#/$defs/checks"
+    },
+    "conformance_status": {
+      "enum": [
+        "conformant",
+        "non-conformant",
+        "incomplete"
+      ]
+    },
+    "release_decision": {
+      "enum": [
+        "accepted",
+        "rejected",
+        "human-review"
+      ]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "generated_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 1200
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$"
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemas_valid",
+        "semantic_invariants_valid",
+        "termination_authorized",
+        "lifecycle_audit_conformant",
+        "human_axis_preserved",
+        "final_board_terminal",
+        "no_unresolved_controls",
+        "all_checks_passed"
+      ],
+      "properties": {
+        "schemas_valid": {
+          "type": "boolean"
+        },
+        "semantic_invariants_valid": {
+          "type": "boolean"
+        },
+        "termination_authorized": {
+          "type": "boolean"
+        },
+        "lifecycle_audit_conformant": {
+          "type": "boolean"
+        },
+        "human_axis_preserved": {
+          "type": "boolean"
+        },
+        "final_board_terminal": {
+          "type": "boolean"
+        },
+        "no_unresolved_controls": {
+          "type": "boolean"
+        },
+        "all_checks_passed": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
