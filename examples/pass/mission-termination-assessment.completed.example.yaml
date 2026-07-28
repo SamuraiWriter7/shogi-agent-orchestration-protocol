@@ -1,0 +1,46 @@
+schema_version: 0.5.0
+termination_assessment_id: termination-assessment.wind-mission.completed-0001
+mission_profile_ref: mission-profile.wind-trace-audit.v1
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0007
+board_revision: 7
+evaluated_success_conditions:
+- condition_id: success.trace-chain-verified
+  satisfied: true
+  evidence_refs:
+  - trace.move.trace-pawn-0001
+  - trace.promotion.trace-pawn-0001
+  - trace.demotion.trace-pawn-0001
+- condition_id: success.audit-complete
+  satisfied: true
+  evidence_refs:
+  - lifecycle-audit.wind-mission.0001
+evaluated_termination_conditions:
+- condition_id: termination.success
+  triggered: true
+  evidence_refs:
+  - board-state.wind-mission.0007
+- condition_id: termination.human-stop
+  triggered: false
+  evidence_refs: []
+- condition_id: termination.safety
+  triggered: false
+  evidence_refs: []
+- condition_id: termination.timeout
+  triggered: false
+  evidence_refs: []
+open_controls:
+  active_promotion_binding_refs: []
+  quarantined_reserve_entry_refs: []
+  unresolved_authorization_refs: []
+  open_dispute_refs: []
+outcome: complete
+outcome_reason: success
+required_controls:
+  authorization_required: true
+  human_review_required: true
+authorization_ref: authorization.mission-close.wind-mission-0001
+human_review_ref: human-review.mission-close.wind-mission-0001
+evaluated_by: agent.mission-controller
+evaluated_at: '2026-07-27T00:25:02Z'
+trace_ref: trace.mission-close.wind-mission-0001
