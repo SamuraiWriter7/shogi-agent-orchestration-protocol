@@ -1,11 +1,11 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 board_state_id: board-state.wind-mission.0003
 mission_id: mission.wind-trace-audit
 board_revision: 3
 status: active
 mission_objective: Collect workflow traces, execute approved processing, and preserve human-governed auditability.
 human_axis_ref: human-axis.wind-mission.primary
-board_policy_ref: policy.shogi-agent-legal-moves.v0.4
+board_policy_ref: policy.shogi-agent-legal-moves.v0.5
 zones:
 - zone_id: zone.human-control
   zone_type: human-control
@@ -178,4 +178,3 @@ reserve_pool:
   entered_at: '2026-07-27T00:05:05Z'
 recorded_by: agent.board-controller
 recorded_at: '2026-07-27T00:05:05Z'
-
