@@ -109,7 +109,7 @@ def validate_piece_semantics(piece: dict[str, Any]) -> list[str]:
         )
 
     if piece["piece_type"] == "king" and piece["movement_profile"]["max_hops_per_move"] != 0:
-        errors.append("king: max_hops_per_move must be 0 in v0.4")
+        errors.append("king: max_hops_per_move must be 0 in v0.5")
 
     if piece["piece_type"] != "king" and "rewrite_human_axis" not in denied:
         errors.append("non-king piece: denied_actions must include 'rewrite_human_axis'")
@@ -1531,6 +1531,267 @@ def validate_demotion_semantics(
     return errors
 
 
+
+def validate_mission_profile_semantics(
+    profile: dict[str, Any],
+    boards: dict[str, dict[str, Any]],
+    policy: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    board = boards.get(profile["initial_board_state_ref"])
+    if board is None:
+        return ["mission profile: initial_board_state_ref does not resolve"]
+    if profile["mission_id"] != board["mission_id"]:
+        errors.append("mission profile: mission_id does not match the initial board")
+    if profile["human_axis_ref"] != board["human_axis_ref"]:
+        errors.append("mission profile: human_axis_ref does not match the initial board")
+    if board["board_revision"] != 1:
+        errors.append("mission profile: the initial board must have revision 1")
+    if board["status"] not in {"initializing", "active"}:
+        errors.append("mission profile: initial board must be initializing or active")
+    if profile["legal_move_policy_ref"] != policy["policy_id"]:
+        errors.append("mission profile: legal_move_policy_ref does not match the loaded policy")
+    if board["board_policy_ref"] != policy["policy_id"]:
+        errors.append("mission profile: initial board policy does not match the loaded policy")
+    if profile["mission_id"] not in policy["allowed_mission_ids"]:
+        errors.append("mission profile: mission_id is outside the legal move policy scope")
+    success_ids = [item["condition_id"] for item in profile["success_conditions"]]
+    termination_ids = [item["condition_id"] for item in profile["termination_conditions"]]
+    errors.extend(ensure_unique(success_ids, "success_conditions.condition_id"))
+    errors.extend(ensure_unique(termination_ids, "termination_conditions.condition_id"))
+    for condition_id in sorted(set(success_ids) & set(termination_ids)):
+        errors.append(f"mission profile: condition_id '{condition_id}' is reused across condition groups")
+    if not any(item["trigger_type"] == "success" and item["outcome"] == "complete" for item in profile["termination_conditions"]):
+        errors.append("mission profile: at least one success termination condition must complete the mission")
+    required = {"piece-profile", "board-state", "legal-move-policy", "termination-assessment", "lifecycle-audit", "conformance-report"}
+    missing = sorted(required - set(profile["required_artifact_types"]))
+    if missing:
+        errors.append("mission profile: missing required artifact types: " + ", ".join(missing))
+    starts_at = parse_time(profile["timebox"]["starts_at"])
+    expires_at = parse_time(profile["timebox"]["expires_at"])
+    if expires_at <= starts_at:
+        errors.append("mission profile: timebox expires_at must be later than starts_at")
+    if parse_time(profile["created_at"]) > starts_at:
+        errors.append("mission profile: created_at cannot be later than timebox starts_at")
+    if profile["max_board_revisions"] < board["board_revision"]:
+        errors.append("mission profile: max_board_revisions cannot be below the initial revision")
+    return errors
+
+
+def _condition_result_map(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {item["condition_id"]: item for item in items}
+
+
+def validate_termination_assessment_semantics(
+    assessment: dict[str, Any],
+    profiles: dict[str, dict[str, Any]],
+    boards: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    profile = profiles.get(assessment["mission_profile_ref"])
+    board = boards.get(assessment["board_state_ref"])
+    if profile is None:
+        return ["termination assessment: mission_profile_ref does not resolve"]
+    if board is None:
+        return ["termination assessment: board_state_ref does not resolve"]
+    if assessment["mission_id"] != profile["mission_id"] or assessment["mission_id"] != board["mission_id"]:
+        errors.append("termination assessment: mission_id lineage is inconsistent")
+    if assessment["board_revision"] != board["board_revision"]:
+        errors.append("termination assessment: board_revision does not match the referenced board")
+    success_expected = {item["condition_id"]: item for item in profile["success_conditions"]}
+    termination_expected = {item["condition_id"]: item for item in profile["termination_conditions"]}
+    success_actual = _condition_result_map(assessment["evaluated_success_conditions"])
+    termination_actual = _condition_result_map(assessment["evaluated_termination_conditions"])
+    if set(success_actual) != set(success_expected):
+        errors.append("termination assessment: evaluated success condition IDs do not match the mission profile")
+    if set(termination_actual) != set(termination_expected):
+        errors.append("termination assessment: evaluated termination condition IDs do not match the mission profile")
+    for condition_id, result in success_actual.items():
+        if result["satisfied"] and not result["evidence_refs"]:
+            errors.append(f"termination assessment: satisfied condition '{condition_id}' requires evidence")
+    for condition_id, result in termination_actual.items():
+        if result["triggered"] and not result["evidence_refs"]:
+            errors.append(f"termination assessment: triggered condition '{condition_id}' requires evidence")
+    required_success_satisfied = all(
+        success_actual.get(condition_id, {}).get("satisfied", False)
+        for condition_id, condition in success_expected.items()
+        if condition["required"]
+    )
+    triggered = [termination_expected[cid] for cid, result in termination_actual.items() if result["triggered"] and cid in termination_expected]
+    priority = {"terminate": 4, "pause": 3, "human-review": 2, "complete": 1}
+    expected_outcome = "continue"
+    if triggered:
+        selected = max(triggered, key=lambda item: priority[item["outcome"]])
+        expected_outcome = selected["outcome"]
+    if expected_outcome == "complete" and not required_success_satisfied:
+        expected_outcome = "continue"
+    board_active_promotions = sorted(
+        item.get("promotion_binding_ref") for item in board["occupancies"]
+        if item.get("promotion_state") == "promoted" and item.get("promotion_binding_ref")
+    )
+    board_quarantine = sorted(
+        item["reserve_entry_ref"] for item in board["reserve_pool"]
+        if item["readiness_state"] == "quarantined"
+    )
+    controls = assessment["open_controls"]
+    if sorted(controls["active_promotion_binding_refs"]) != board_active_promotions:
+        errors.append("termination assessment: active promotion controls do not match the board")
+    if sorted(controls["quarantined_reserve_entry_refs"]) != board_quarantine:
+        errors.append("termination assessment: quarantined reserve controls do not match the board")
+    has_open_controls = any(controls[key] for key in controls)
+    if assessment["outcome"] in {"complete", "terminate"} and has_open_controls:
+        errors.append("termination assessment: a terminal outcome is forbidden while controls remain open")
+    if assessment["outcome"] != expected_outcome:
+        errors.append(f"termination assessment: outcome '{assessment['outcome']}' does not match recomputed outcome '{expected_outcome}'")
+    expected_reason = {"complete":"success", "terminate":"human-stop", "pause":"safety-trigger", "human-review":"timeout", "continue":"conditions-not-met"}[expected_outcome]
+    if has_open_controls and expected_outcome == "continue":
+        expected_reason = "open-controls"
+    if assessment["outcome_reason"] != expected_reason:
+        errors.append(f"termination assessment: outcome_reason does not match recomputed reason '{expected_reason}'")
+    human_review_required = any(
+        condition["requires_human_confirmation"]
+        for condition in triggered
+    )
+    expected_controls = {
+        "authorization_required": expected_outcome in {"complete", "terminate"},
+        "human_review_required": human_review_required,
+    }
+    if assessment["required_controls"] != expected_controls:
+        errors.append("termination assessment: required_controls do not match recomputed controls")
+    if expected_controls["authorization_required"] and not assessment.get("authorization_ref"):
+        errors.append("termination assessment: terminal outcome requires authorization_ref")
+    if expected_controls["human_review_required"] and not assessment.get("human_review_ref"):
+        errors.append("termination assessment: triggered condition requires human_review_ref")
+    expected_status = {"complete":"completed", "terminate":"terminated", "pause":"paused"}.get(expected_outcome)
+    if expected_status and board["status"] != expected_status:
+        errors.append(f"termination assessment: board status must be '{expected_status}' for outcome '{expected_outcome}'")
+    if expected_outcome == "continue" and board["status"] not in {"initializing", "active", "paused"}:
+        errors.append("termination assessment: continue outcome requires a non-terminal board")
+    evaluated_at = parse_time(assessment["evaluated_at"])
+    if not (parse_time(profile["timebox"]["starts_at"]) <= evaluated_at <= parse_time(profile["timebox"]["expires_at"])):
+        errors.append("termination assessment: evaluated_at is outside the mission timebox")
+    if board["board_revision"] > profile["max_board_revisions"]:
+        errors.append("termination assessment: board revision exceeds mission maximum")
+    return errors
+
+
+def _refs_resolve(refs: list[str], mapping: dict[str, dict[str, Any]]) -> bool:
+    return all(ref in mapping for ref in refs)
+
+
+def validate_lifecycle_audit_semantics(
+    audit: dict[str, Any], profiles: dict[str, dict[str, Any]], boards: dict[str, dict[str, Any]],
+    terminations: dict[str, dict[str, Any]], receipts: dict[str, dict[str, Any]], placements: dict[str, dict[str, Any]],
+    captures: dict[str, dict[str, Any]], assessments: dict[str, dict[str, Any]], reserves: dict[str, dict[str, Any]],
+    redeployments: dict[str, dict[str, Any]], bindings: dict[str, dict[str, Any]], demotions: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    profile = profiles.get(audit["mission_profile_ref"])
+    initial = boards.get(audit["initial_board_state_ref"])
+    final = boards.get(audit["final_board_state_ref"])
+    termination = terminations.get(audit["termination_assessment_ref"])
+    if profile is None or initial is None or final is None or termination is None:
+        return ["lifecycle audit: mission, board, or termination lineage does not resolve"]
+    observed = [boards.get(ref) for ref in audit["observed_board_state_refs"]]
+    resolved_boards = [item for item in observed if item is not None]
+    revisions = sorted(item["board_revision"] for item in resolved_boards)
+    min_rev, max_rev = audit["expected_board_revision_min"], audit["expected_board_revision_max"]
+    expected_checks: dict[str, bool] = {}
+    expected_checks["board_revisions_contiguous"] = (
+        len(resolved_boards) == len(observed) and revisions == list(range(min_rev, max_rev + 1))
+        and initial["board_revision"] == min_rev and final["board_revision"] == max_rev
+    )
+    expected_checks["mission_id_consistent"] = all(item["mission_id"] == audit["mission_id"] for item in resolved_boards) and profile["mission_id"] == audit["mission_id"]
+    expected_checks["human_axis_continuous"] = all(item["human_axis_ref"] == profile["human_axis_ref"] for item in resolved_boards)
+    expected_checks["legal_policy_consistent"] = all(item["board_policy_ref"] == profile["legal_move_policy_ref"] for item in resolved_boards)
+    artifacts = audit["artifact_refs"]
+    maps = {
+        "move_receipt_refs": receipts, "placement_record_refs": placements, "capture_record_refs": captures,
+        "sanitization_assessment_refs": assessments, "reserve_entry_refs": reserves, "redeployment_record_refs": redeployments,
+        "promotion_binding_refs": bindings, "demotion_record_refs": demotions,
+    }
+    expected_checks["all_referenced_artifacts_resolve"] = all(_refs_resolve(artifacts[key], mapping) for key, mapping in maps.items())
+    expected_checks["all_executed_moves_authorized"] = all(
+        receipt["outcome"] != "executed" or bool(receipt.get("authorization_ref"))
+        for ref, receipt in receipts.items() if ref in artifacts["move_receipt_refs"]
+    )
+    expected_checks["captures_sanitized_before_redeployment"] = all(
+        (redeployments[ref]["sanitization_assessment_ref"] in assessments and assessments[redeployments[ref]["sanitization_assessment_ref"]]["decision"] == "passed")
+        for ref in artifacts["redeployment_record_refs"] if ref in redeployments
+    ) and expected_checks["all_referenced_artifacts_resolve"]
+    expected_checks["promotions_reversible"] = all(
+        any(record["promotion_binding_ref"] == ref and record["demotion_status"] == "applied" for record in demotions.values())
+        for ref in artifacts["promotion_binding_refs"]
+    )
+    expected_checks["no_active_promotion_at_close"] = not any(item.get("promotion_state") == "promoted" for item in final["occupancies"])
+    expected_checks["no_quarantined_reserve_at_close"] = not any(item["readiness_state"] == "quarantined" for item in final["reserve_pool"])
+    expected_checks["final_board_terminal"] = final["status"] in {"completed", "terminated"} and termination["board_state_ref"] == final["board_state_id"]
+    referenced_docs: list[dict[str, Any]] = []
+    for key, mapping in maps.items():
+        referenced_docs.extend(mapping[ref] for ref in artifacts[key] if ref in mapping)
+    expected_checks["trace_refs_present"] = all(bool(item.get("trace_ref")) for item in referenced_docs)
+    expected_checks["all_checks_passed"] = all(expected_checks.values())
+    for key, expected in expected_checks.items():
+        if audit["checks"][key] != expected:
+            errors.append(f"lifecycle audit: check '{key}' does not match recomputed result")
+    expected_decision = "conformant" if expected_checks["all_checks_passed"] else "non-conformant"
+    if audit["audit_decision"] != expected_decision:
+        errors.append(f"lifecycle audit: audit_decision does not match recomputed decision '{expected_decision}'")
+    if expected_decision == "conformant" and audit["findings"]:
+        errors.append("lifecycle audit: conformant audit must not contain findings")
+    if audit["initial_board_state_ref"] != profile["initial_board_state_ref"]:
+        errors.append("lifecycle audit: initial board does not match mission profile")
+    if termination["mission_profile_ref"] != profile["mission_profile_id"]:
+        errors.append("lifecycle audit: termination assessment does not belong to mission profile")
+    if parse_time(audit["audited_at"]) < parse_time(termination["evaluated_at"]):
+        errors.append("lifecycle audit: audited_at cannot precede termination assessment")
+    return errors
+
+
+def validate_conformance_report_semantics(
+    report: dict[str, Any], profiles: dict[str, dict[str, Any]], boards: dict[str, dict[str, Any]],
+    terminations: dict[str, dict[str, Any]], audits: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    profile = profiles.get(report["mission_profile_ref"]); board = boards.get(report["final_board_state_ref"])
+    termination = terminations.get(report["termination_assessment_ref"]); audit = audits.get(report["lifecycle_audit_ref"])
+    if profile is None or board is None or termination is None or audit is None:
+        return ["conformance report: one or more lineage references do not resolve"]
+    open_controls = termination["open_controls"]
+    expected = {
+        "schemas_valid": True,
+        "semantic_invariants_valid": audit["checks"]["all_checks_passed"],
+        "termination_authorized": termination["outcome"] in {"complete", "terminate"} and bool(termination.get("authorization_ref")) and (not termination["required_controls"]["human_review_required"] or bool(termination.get("human_review_ref"))),
+        "lifecycle_audit_conformant": audit["audit_decision"] == "conformant",
+        "human_axis_preserved": audit["checks"]["human_axis_continuous"],
+        "final_board_terminal": board["status"] in {"completed", "terminated"},
+        "no_unresolved_controls": not any(open_controls[key] for key in open_controls),
+    }
+    expected["all_checks_passed"] = all(expected.values())
+    for key, value in expected.items():
+        if report["checks"][key] != value:
+            errors.append(f"conformance report: check '{key}' does not match recomputed result")
+    expected_status = "conformant" if expected["all_checks_passed"] else "non-conformant"
+    expected_release = "accepted" if expected_status == "conformant" else "rejected"
+    if report["conformance_status"] != expected_status:
+        errors.append(f"conformance report: conformance_status does not match recomputed status '{expected_status}'")
+    if report["release_decision"] != expected_release:
+        errors.append(f"conformance report: release_decision does not match recomputed decision '{expected_release}'")
+    if report["conformance_profile_id"] != profile["conformance_profile_id"]:
+        errors.append("conformance report: conformance_profile_id does not match mission profile")
+    if report["mission_id"] != profile["mission_id"] or report["mission_id"] != board["mission_id"]:
+        errors.append("conformance report: mission_id lineage is inconsistent")
+    if audit["final_board_state_ref"] != board["board_state_id"] or termination["board_state_ref"] != board["board_state_id"]:
+        errors.append("conformance report: final board lineage is inconsistent")
+    required_evidence = {termination["termination_assessment_id"], audit["lifecycle_audit_id"], board["board_state_id"]}
+    if not required_evidence.issubset(set(report["evidence_refs"])):
+        errors.append("conformance report: evidence_refs omit required closeout records")
+    generated_at = parse_time(report["generated_at"])
+    if generated_at < parse_time(audit["audited_at"]) or generated_at < parse_time(termination["evaluated_at"]):
+        errors.append("conformance report: generated_at cannot precede its evidence records")
+    return errors
+
+
 def report_errors(prefix: str, errors: list[str]) -> None:
     for error in errors:
         print(f"  - {prefix}: {error}")
@@ -1566,7 +1827,7 @@ def validate_pass_document(
 
 
 def main() -> int:
-    print("=== Shogi Agent Orchestration Protocol v0.4 Validation ===")
+    print("=== Shogi Agent Orchestration Protocol v0.5 Validation ===")
     print()
 
     schemas = {
@@ -1585,6 +1846,10 @@ def main() -> int:
         "promotion_assessment": load_schema("promotion-eligibility-assessment.schema.json"),
         "promotion_binding": load_schema("promoted-capability-binding.schema.json"),
         "demotion": load_schema("agent-demotion-record.schema.json"),
+        "mission_profile": load_schema("shogi-agent-mission-profile.schema.json"),
+        "termination": load_schema("mission-termination-assessment.schema.json"),
+        "lifecycle_audit": load_schema("board-lifecycle-audit-record.schema.json"),
+        "conformance": load_schema("shogi-agent-conformance-report.schema.json"),
     }
     failures: list[str] = []
 
@@ -1686,6 +1951,30 @@ def main() -> int:
         if document:
             demotions[document["demotion_record_id"]] = document
 
+    mission_profiles: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("shogi-agent-mission-profile*.example.yaml")):
+        document = validate_pass_document(path, schemas["mission_profile"], lambda item: validate_mission_profile_semantics(item, boards, policy), failures)
+        if document:
+            mission_profiles[document["mission_profile_id"]] = document
+
+    terminations: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("mission-termination-assessment*.example.yaml")):
+        document = validate_pass_document(path, schemas["termination"], lambda item: validate_termination_assessment_semantics(item, mission_profiles, boards), failures)
+        if document:
+            terminations[document["termination_assessment_id"]] = document
+
+    lifecycle_audits: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("board-lifecycle-audit-record*.example.yaml")):
+        document = validate_pass_document(path, schemas["lifecycle_audit"], lambda item: validate_lifecycle_audit_semantics(item, mission_profiles, boards, terminations, receipts, placements, captures, assessments, reserves, redeployments, promotion_bindings, demotions), failures)
+        if document:
+            lifecycle_audits[document["lifecycle_audit_id"]] = document
+
+    conformance_reports: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("shogi-agent-conformance-report*.example.yaml")):
+        document = validate_pass_document(path, schemas["conformance"], lambda item: validate_conformance_report_semantics(item, mission_profiles, boards, terminations, lifecycle_audits), failures)
+        if document:
+            conformance_reports[document["conformance_report_id"]] = document
+
     fail_cases = [
         (FAIL_DIR / "piece-profile.invalid-piece-type.example.yaml", "piece", "schema"),
         (FAIL_DIR / "board-state.duplicate-occupancy.example.yaml", "board", "semantic"),
@@ -1703,6 +1992,10 @@ def main() -> int:
         (FAIL_DIR / "promotion-eligibility-assessment.false-eligible.example.yaml", "promotion_assessment", "semantic"),
         (FAIL_DIR / "promoted-capability-binding.overextended.example.yaml", "promotion_binding", "semantic"),
         (FAIL_DIR / "agent-demotion-record.binding-mismatch.example.yaml", "demotion", "semantic"),
+        (FAIL_DIR / "shogi-agent-mission-profile.policy-mismatch.example.yaml", "mission_profile", "semantic"),
+        (FAIL_DIR / "mission-termination-assessment.active-promotion.example.yaml", "termination", "semantic"),
+        (FAIL_DIR / "board-lifecycle-audit-record.gapped-revision.example.yaml", "lifecycle_audit", "semantic"),
+        (FAIL_DIR / "shogi-agent-conformance-report.false-conformant.example.yaml", "conformance", "semantic"),
     ]
 
     for path, schema_key, expected_stage in fail_cases:
@@ -1752,6 +2045,14 @@ def main() -> int:
             semantic = validate_promotion_binding_semantics(document, promotion_requests, promotion_assessments, boards, pieces)
         elif schema_key == "demotion":
             semantic = validate_demotion_semantics(document, promotion_bindings, boards, pieces)
+        elif schema_key == "mission_profile":
+            semantic = validate_mission_profile_semantics(document, boards, policy)
+        elif schema_key == "termination":
+            semantic = validate_termination_assessment_semantics(document, mission_profiles, boards)
+        elif schema_key == "lifecycle_audit":
+            semantic = validate_lifecycle_audit_semantics(document, mission_profiles, boards, terminations, receipts, placements, captures, assessments, reserves, redeployments, promotion_bindings, demotions)
+        elif schema_key == "conformance":
+            semantic = validate_conformance_report_semantics(document, mission_profiles, boards, terminations, lifecycle_audits)
         else:
             semantic = []
         if semantic:
