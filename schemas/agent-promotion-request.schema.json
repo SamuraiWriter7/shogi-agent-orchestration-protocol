@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-promotion-request.schema.json",
+  "title": "Agent Promotion Request",
+  "description": "Requests a temporary, bounded expansion of an active piece capability profile at a fixed board revision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "promotion_request_id",
+    "mission_id",
+    "board_state_ref",
+    "board_revision",
+    "piece_profile_id",
+    "agent_id",
+    "source_node_id",
+    "base_piece_type",
+    "requested_promoted_piece_type",
+    "requested_capability_additions",
+    "requested_tool_additions",
+    "requested_data_scope_additions",
+    "requested_authority_scope_ref",
+    "requested_resource_budget",
+    "requested_duration_seconds",
+    "requested_by",
+    "promotion_reason",
+    "requested_at",
+    "valid_until",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.4.0"
+    },
+    "promotion_request_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "source_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "base_piece_type": {
+      "$ref": "#/$defs/base_piece_type"
+    },
+    "requested_promoted_piece_type": {
+      "$ref": "#/$defs/promoted_piece_type"
+    },
+    "requested_capability_additions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "requested_tool_additions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "requested_data_scope_additions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "requested_authority_scope_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "requested_resource_budget": {
+      "$ref": "#/$defs/resource_budget"
+    },
+    "requested_duration_seconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 86400
+    },
+    "requested_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "promotion_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "base_piece_type": {
+      "enum": [
+        "king",
+        "rook",
+        "bishop",
+        "gold",
+        "silver",
+        "knight",
+        "lance",
+        "pawn",
+        "custom"
+      ]
+    },
+    "promoted_piece_type": {
+      "enum": [
+        "promoted-rook",
+        "promoted-bishop",
+        "promoted-silver",
+        "promoted-knight",
+        "promoted-lance",
+        "promoted-pawn",
+        "custom-promoted"
+      ]
+    },
+    "resource_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tokens_per_move",
+        "max_cost_per_move",
+        "currency",
+        "max_duration_seconds",
+        "max_concurrent_actions"
+      ],
+      "properties": {
+        "max_tokens_per_move": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_cost_per_move": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "max_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_concurrent_actions": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
