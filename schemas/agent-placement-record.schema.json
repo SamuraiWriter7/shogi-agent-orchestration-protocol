@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-placement-record.schema.json",
   "title": "Agent Placement Record",
-  "description": "Records an initial placement, board movement, or v0.3 reserve redeployment linked to policy and authorization evidence.",
+  "description": "Records an initial placement, board movement, or v0.4 reserve redeployment linked to policy and authorization evidence.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,7 +25,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.3.0"
+      "const": "0.4.0"
     },
     "placement_record_id": {
       "$ref": "#/$defs/identifier"
