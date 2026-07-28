@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 sanitization_assessment_id: sanitization.wind-mission.false-pass
 capture_record_ref: capture.wind-mission.silver-0001
 mission_id: mission.wind-trace-audit
