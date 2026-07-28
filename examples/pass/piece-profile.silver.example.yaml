@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 piece_profile_id: piece-profile.external-silver.v1
 agent_id: agent.external-analyst-01
 piece_type: silver
@@ -6,46 +6,37 @@ side: gote
 role_name: External Analysis Agent
 role_description: A bounded external agent subject to capture, quarantine, sanitization, and controlled redeployment.
 lifecycle_state: active
-
 capability_profile:
   allowed_actions:
-    - analyze_external_data
-    - produce_findings
-
+  - analyze_external_data
+  - produce_findings
   denied_actions:
-    - modify_authorization
-    - access_human_axis
-    - rewrite_human_axis
-
+  - modify_authorization
+  - access_human_axis
+  - rewrite_human_axis
   tools:
-    - tool.external-analyzer
-
+  - tool.external-analyzer
   data_scopes:
-    - data.external-findings
-
+  - data.external-findings
 movement_profile:
-  movement_policy_ref: policy.shogi-agent-legal-moves.v0.4
+  movement_policy_ref: policy.shogi-agent-legal-moves.v0.5
   max_hops_per_move: 1
   may_cross_security_zones: false
   may_enter_restricted_zones: false
-
 authority_scope:
   authority_scope_ref: authority.external-analyst.bounded
   max_autonomy: supervised
   requires_human_review_for:
-    - change_controller
-    - expand_data_scope
-
+  - change_controller
+  - expand_data_scope
 resource_budget:
   max_tokens_per_move: 16000
   max_cost_per_move: 0.4
   currency: USD
   max_duration_seconds: 420
   max_concurrent_actions: 1
-
 human_axis_binding_ref: human-axis.wind-mission.primary
-created_at: "2026-07-27T00:00:00Z"
-
+created_at: '2026-07-27T00:00:00Z'
 metadata:
   canonical_symbol: silver
   origin: external
