@@ -28,7 +28,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.4.0"
+      "const": "0.5.0"
     },
     "move_evaluation_id": {
       "$ref": "#/$defs/identifier"
@@ -287,3 +287,4 @@
     }
   }
 }
+
