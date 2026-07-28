@@ -1,4 +1,4 @@
-schema_version: 0.3.0
+schema_version: 0.4.0
 redeployment_record_id: redeployment.wind-mission.silver-0001
 mission_id: mission.wind-trace-audit
 reserve_entry_ref: reserve-entry.wind-mission.silver.ready-0001
