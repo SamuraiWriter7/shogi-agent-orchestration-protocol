@@ -1,4 +1,4 @@
-schema_version: 0.3.0
+schema_version: 0.4.0
 move_proposal_id: move-proposal.wind-mission.gold-review-0001
 mission_id: mission.wind-trace-audit
 board_state_ref: board-state.wind-mission.0001
@@ -17,7 +17,7 @@ estimated_resource_usage:
   currency: USD
   duration_seconds: 120
   concurrent_actions: 1
-legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.3
+legal_move_policy_ref: policy.shogi-agent-legal-moves.v0.4
 proposal_status: proposed
 priority: high
 proposed_by: agent.board-controller
