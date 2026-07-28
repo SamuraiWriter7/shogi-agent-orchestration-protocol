@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/shogi-agent-piece-profile.schema.json",
   "title": "Shogi Agent Piece Profile",
-  "description": "Defines a role-bounded AI agent as a shogi-inspired piece with explicit capabilities, authority, movement limits, and resource budgets.",
+  "description": "Defines a role-bounded AI agent as a shogi-inspired piece with explicit capabilities, authority, movement limits, resource budgets, and optional promotion constraints.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -22,7 +22,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.3.0"
+      "const": "0.4.0"
     },
     "piece_profile_id": {
       "$ref": "#/$defs/identifier"
@@ -219,12 +219,114 @@
           "null"
         ]
       }
+    },
+    "promotion_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_promoted_piece_types",
+        "allowed_zone_types",
+        "allowed_capability_additions",
+        "allowed_tool_additions",
+        "allowed_data_scope_additions",
+        "allowed_authority_scope_refs",
+        "max_duration_seconds",
+        "max_resource_multiplier",
+        "requires_human_review"
+      ],
+      "properties": {
+        "allowed_promoted_piece_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/promoted_piece_type"
+          }
+        },
+        "allowed_zone_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/zone_type"
+          }
+        },
+        "allowed_capability_additions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "allowed_tool_additions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "allowed_data_scope_additions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "allowed_authority_scope_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "max_duration_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400
+        },
+        "max_resource_multiplier": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "requires_human_review": {
+          "type": "boolean"
+        }
+      }
     }
   },
   "$defs": {
     "identifier": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "promoted_piece_type": {
+      "enum": [
+        "promoted-rook",
+        "promoted-bishop",
+        "promoted-silver",
+        "promoted-knight",
+        "promoted-lance",
+        "promoted-pawn",
+        "custom-promoted"
+      ]
+    },
+    "zone_type": {
+      "enum": [
+        "human-control",
+        "planning",
+        "research",
+        "execution",
+        "audit",
+        "settlement",
+        "reserve",
+        "quarantine",
+        "custom"
+      ]
     }
   }
 }
