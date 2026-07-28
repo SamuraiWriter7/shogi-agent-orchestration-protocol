@@ -26,7 +26,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.3.0"
+      "const": "0.4.0"
     },
     "move_receipt_id": {
       "$ref": "#/$defs/identifier"
