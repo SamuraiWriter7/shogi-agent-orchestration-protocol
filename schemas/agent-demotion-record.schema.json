@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-demotion-record.schema.json",
+  "title": "Agent Demotion Record",
+  "description": "Records revocation or expiry of a promoted capability binding and restoration of the base piece profile.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "demotion_record_id",
+    "mission_id",
+    "promotion_binding_ref",
+    "piece_profile_id",
+    "agent_id",
+    "board_state_before_ref",
+    "board_revision_before",
+    "board_state_after_ref",
+    "board_revision_after",
+    "source_node_id",
+    "demotion_reason",
+    "demotion_status",
+    "revoked_capabilities",
+    "revoked_tools",
+    "revoked_data_scopes",
+    "restored_authority_scope_ref",
+    "restored_resource_budget",
+    "requested_by",
+    "authorization_ref",
+    "requested_at",
+    "applied_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.4.0"
+    },
+    "demotion_record_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "promotion_binding_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_before_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision_before": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "board_state_after_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision_after": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "source_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "demotion_reason": {
+      "enum": [
+        "expiry",
+        "mission-complete",
+        "audit-failure",
+        "budget-exceeded",
+        "policy-violation",
+        "manual",
+        "emergency"
+      ]
+    },
+    "demotion_status": {
+      "enum": [
+        "scheduled",
+        "applied",
+        "rejected"
+      ]
+    },
+    "revoked_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "revoked_tools": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "revoked_data_scopes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "restored_authority_scope_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "restored_resource_budget": {
+      "$ref": "#/$defs/resource_budget"
+    },
+    "requested_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "demotion_description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "applied_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "resource_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tokens_per_move",
+        "max_cost_per_move",
+        "currency",
+        "max_duration_seconds",
+        "max_concurrent_actions"
+      ],
+      "properties": {
+        "max_tokens_per_move": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_cost_per_move": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "max_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_concurrent_actions": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
