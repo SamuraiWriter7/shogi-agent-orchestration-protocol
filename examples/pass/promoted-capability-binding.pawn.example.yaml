@@ -1,0 +1,35 @@
+schema_version: 0.4.0
+promoted_capability_binding_id: promotion-binding.wind-mission.trace-pawn-0001
+promotion_request_ref: promotion-request.wind-mission.trace-pawn-0001
+promotion_eligibility_assessment_ref: promotion-assessment.wind-mission.trace-pawn-0001
+mission_id: mission.wind-trace-audit
+piece_profile_id: piece-profile.trace-pawn.v1
+agent_id: agent.trace-worker-01
+base_piece_type: pawn
+promoted_piece_type: promoted-pawn
+board_state_before_ref: board-state.wind-mission.0004
+board_revision_before: 4
+board_state_after_ref: board-state.wind-mission.0005
+board_revision_after: 5
+source_node_id: node.execution-1
+granted_capability_additions:
+- validate_trace_chain
+- flag_trace_anomaly
+granted_tool_additions:
+- tool.trace-validator
+granted_data_scope_additions:
+- data.audit-findings
+authority_scope_binding_ref: authority.trace-worker.promoted
+effective_resource_budget:
+  max_tokens_per_move: 18000
+  max_cost_per_move: 0.5
+  currency: USD
+  max_duration_seconds: 480
+  max_concurrent_actions: 2
+binding_status: active
+authorization_ref: authorization.promotion.trace-pawn-0001
+human_review_ref: human-review.promotion.trace-pawn-0001
+issued_by: agent.board-controller
+effective_at: "2026-07-27T00:08:00Z"
+expires_at: "2026-07-27T00:38:00Z"
+trace_ref: trace.promotion-binding.trace-pawn-0001
