@@ -1,4 +1,4 @@
-schema_version: 0.3.0
+schema_version: 0.4.0
 reserve_entry_id: reserve-entry.wind-mission.silver.ready-0001
 previous_reserve_entry_ref: reserve-entry.wind-mission.silver.quarantined-0001
 mission_id: mission.wind-trace-audit
