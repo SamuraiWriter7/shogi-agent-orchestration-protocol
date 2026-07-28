@@ -18,14 +18,14 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.4.0"
+      "const": "0.5.0"
     },
     "policy_id": {
       "$ref": "#/$defs/identifier"
     },
     "policy_version": {
       "type": "string",
-      "pattern": "^0\\.4\\.[0-9]+$"
+      "pattern": "^0\\.5\\.[0-9]+$"
     },
     "allowed_mission_ids": {
       "type": "array",
