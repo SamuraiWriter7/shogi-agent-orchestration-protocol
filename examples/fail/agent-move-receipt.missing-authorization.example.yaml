@@ -1,4 +1,4 @@
-schema_version: 0.3.0
+schema_version: 0.4.0
 move_receipt_id: move-receipt.wind-mission.missing-authorization-0001
 move_proposal_ref: move-proposal.wind-mission.pawn-0001
 move_evaluation_ref: move-evaluation.wind-mission.pawn-0001
