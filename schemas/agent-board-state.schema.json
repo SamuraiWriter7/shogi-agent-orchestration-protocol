@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/agent-board-state.schema.json",
   "title": "Agent Board State",
-  "description": "Represents a mission board, including active occupancies, quarantine, and v0.3 reserve-state references.",
+  "description": "Represents a mission board, including active occupancies, temporary promotion bindings, quarantine, and reserve-state references.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -23,7 +23,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "0.3.0"
+      "const": "0.4.0"
     },
     "board_state_id": {
       "$ref": "#/$defs/identifier"
@@ -249,8 +249,47 @@
         },
         "controller_ref": {
           "$ref": "#/$defs/identifier"
+        },
+        "promotion_state": {
+          "enum": [
+            "base",
+            "promoted"
+          ]
+        },
+        "effective_piece_type": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/piece_type"
+            },
+            {
+              "$ref": "#/$defs/promoted_piece_type"
+            }
+          ]
+        },
+        "promotion_binding_ref": {
+          "$ref": "#/$defs/identifier"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "promotion_state": {
+                "const": "promoted"
+              }
+            },
+            "required": [
+              "promotion_state"
+            ]
+          },
+          "then": {
+            "required": [
+              "effective_piece_type",
+              "promotion_binding_ref"
+            ]
+          }
+        }
+      ]
     },
     "reserve_entry": {
       "type": "object",
@@ -311,6 +350,17 @@
           "format": "date-time"
         }
       }
+    },
+    "promoted_piece_type": {
+      "enum": [
+        "promoted-rook",
+        "promoted-bishop",
+        "promoted-silver",
+        "promoted-knight",
+        "promoted-lance",
+        "promoted-pawn",
+        "custom-promoted"
+      ]
     }
   }
 }
