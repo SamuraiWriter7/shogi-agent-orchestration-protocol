@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 promoted_capability_binding_id: promotion-binding.wind-mission.trace-pawn-0001
 promotion_request_ref: promotion-request.wind-mission.trace-pawn-0001
 promotion_eligibility_assessment_ref: promotion-assessment.wind-mission.trace-pawn-0001
