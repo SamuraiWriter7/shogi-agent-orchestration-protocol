@@ -1,0 +1,27 @@
+schema_version: 0.4.0
+promotion_request_id: promotion-request.wind-mission.king-forbidden
+mission_id: mission.wind-trace-audit
+board_state_ref: board-state.wind-mission.0004
+board_revision: 4
+piece_profile_id: piece-profile.human-axis-king.v1
+agent_id: agent.human-axis-guardian
+source_node_id: node.human-gate-1
+base_piece_type: king
+requested_promoted_piece_type: custom-promoted
+requested_capability_additions:
+- rewrite_human_axis
+requested_tool_additions: []
+requested_data_scope_additions: []
+requested_authority_scope_ref: authority.human-axis.unbounded
+requested_resource_budget:
+  max_tokens_per_move: 5000
+  max_cost_per_move: 0.1
+  currency: USD
+  max_duration_seconds: 120
+  max_concurrent_actions: 1
+requested_duration_seconds: 600
+requested_by: agent.board-controller
+promotion_reason: This must fail because the human-axis king is not promotable.
+requested_at: "2026-07-27T00:07:00Z"
+valid_until: "2026-07-27T00:20:00Z"
+trace_ref: trace.promotion.king-forbidden
