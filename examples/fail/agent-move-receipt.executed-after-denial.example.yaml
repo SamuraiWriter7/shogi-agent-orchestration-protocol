@@ -1,4 +1,4 @@
-schema_version: 0.3.0
+schema_version: 0.4.0
 move_receipt_id: move-receipt.wind-mission.executed-after-denial-0001
 move_proposal_ref: move-proposal.wind-mission.denied-0001
 move_evaluation_ref: move-evaluation.wind-mission.denied-0001
@@ -26,3 +26,4 @@ execution_completed_at: '2026-07-27T00:04:03Z'
 trace_ref: trace.move-receipt.executed-after-denial-0001
 recorded_by: agent.board-controller
 recorded_at: '2026-07-27T00:04:04Z'
+
