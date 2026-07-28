@@ -1,0 +1,69 @@
+schema_version: 0.5.0
+mission_profile_id: mission-profile.wind-trace-audit.policy-mismatch
+mission_id: mission.wind-trace-audit
+mission_name: Wind Trace Audit Mission
+mission_objective: Collect workflow traces, execute approved processing, preserve
+  human-governed auditability, and close the board only after every temporary authority
+  and quarantine state is resolved.
+mission_status: completed
+human_axis_ref: human-axis.wind-mission.primary
+initial_board_state_ref: board-state.wind-mission.0001
+legal_move_policy_ref: policy.shogi-agent-legal-moves.unknown
+success_conditions:
+- condition_id: success.trace-chain-verified
+  description: The trace chain is collected and independently verified.
+  evaluation_mode: evidence
+  required: true
+- condition_id: success.audit-complete
+  description: The mission lifecycle audit is complete with no unresolved critical
+    findings.
+  evaluation_mode: evidence
+  required: true
+termination_conditions:
+- condition_id: termination.success
+  trigger_type: success
+  description: Complete the mission when every required success condition is satisfied
+    and all temporary controls are closed.
+  outcome: complete
+  requires_human_confirmation: true
+- condition_id: termination.human-stop
+  trigger_type: human-stop
+  description: Terminate immediately when the human axis issues an emergency stop.
+  outcome: terminate
+  requires_human_confirmation: true
+- condition_id: termination.safety
+  trigger_type: safety
+  description: Pause and escalate when a critical safety invariant fails.
+  outcome: pause
+  requires_human_confirmation: true
+- condition_id: termination.timeout
+  trigger_type: timeout
+  description: Require human review when the mission timebox expires.
+  outcome: human-review
+  requires_human_confirmation: true
+required_artifact_types:
+- piece-profile
+- board-state
+- legal-move-policy
+- move-proposal
+- legal-move-evaluation
+- move-receipt
+- placement-record
+- capture-record
+- sanitization-assessment
+- reserve-entry
+- redeployment-record
+- promotion-request
+- promotion-assessment
+- promotion-binding
+- demotion-record
+- termination-assessment
+- lifecycle-audit
+- conformance-report
+max_board_revisions: 12
+timebox:
+  starts_at: '2026-07-27T00:00:00Z'
+  expires_at: '2026-07-27T01:00:00Z'
+conformance_profile_id: conformance.shogi-agent.v0.5
+created_by: human.shidenkai-alpha
+created_at: '2026-07-27T00:00:00Z'
