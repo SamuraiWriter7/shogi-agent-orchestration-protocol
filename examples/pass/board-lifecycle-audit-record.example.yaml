@@ -1,0 +1,58 @@
+schema_version: 0.5.0
+lifecycle_audit_id: lifecycle-audit.wind-mission.0001
+mission_profile_ref: mission-profile.wind-trace-audit.v1
+mission_id: mission.wind-trace-audit
+initial_board_state_ref: board-state.wind-mission.0001
+final_board_state_ref: board-state.wind-mission.0007
+termination_assessment_ref: termination-assessment.wind-mission.completed-0001
+observed_board_state_refs:
+- board-state.wind-mission.0001
+- board-state.wind-mission.0002
+- board-state.wind-mission.0003
+- board-state.wind-mission.0004
+- board-state.wind-mission.0005
+- board-state.wind-mission.0006
+- board-state.wind-mission.0007
+artifact_refs:
+  move_receipt_refs:
+  - move-receipt.wind-mission.pawn-0001
+  - move-receipt.wind-mission.gold-review-0001
+  - move-receipt.wind-mission.denied-0001
+  placement_record_refs:
+  - placement.wind-mission.0001
+  - placement.wind-mission.gold-review-0001
+  - placement.wind-mission.redeploy-silver-0001
+  capture_record_refs:
+  - capture.wind-mission.silver-0001
+  sanitization_assessment_refs:
+  - sanitization.wind-mission.silver-0001
+  reserve_entry_refs:
+  - reserve-entry.wind-mission.silver.quarantined-0001
+  - reserve-entry.wind-mission.silver.ready-0001
+  redeployment_record_refs:
+  - redeployment.wind-mission.silver-0001
+  promotion_binding_refs:
+  - promotion-binding.wind-mission.trace-pawn-0001
+  demotion_record_refs:
+  - demotion.wind-mission.trace-pawn-0001
+expected_board_revision_min: 1
+expected_board_revision_max: 7
+checks:
+  board_revisions_contiguous: true
+  mission_id_consistent: true
+  human_axis_continuous: true
+  legal_policy_consistent: true
+  all_referenced_artifacts_resolve: true
+  all_executed_moves_authorized: true
+  captures_sanitized_before_redeployment: true
+  promotions_reversible: true
+  no_active_promotion_at_close: true
+  no_quarantined_reserve_at_close: true
+  final_board_terminal: true
+  trace_refs_present: true
+  all_checks_passed: true
+audit_decision: conformant
+findings: []
+audited_by: agent.lifecycle-auditor
+audited_at: '2026-07-27T00:25:05Z'
+trace_ref: trace.lifecycle-audit.wind-mission-0001
