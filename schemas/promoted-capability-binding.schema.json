@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/promoted-capability-binding.schema.json",
+  "title": "Promoted Capability Binding",
+  "description": "Applies an authorized, human-governed, and time-bounded promoted capability profile to an active piece.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "promoted_capability_binding_id",
+    "promotion_request_ref",
+    "promotion_eligibility_assessment_ref",
+    "mission_id",
+    "piece_profile_id",
+    "agent_id",
+    "base_piece_type",
+    "promoted_piece_type",
+    "board_state_before_ref",
+    "board_revision_before",
+    "board_state_after_ref",
+    "board_revision_after",
+    "source_node_id",
+    "granted_capability_additions",
+    "granted_tool_additions",
+    "granted_data_scope_additions",
+    "authority_scope_binding_ref",
+    "effective_resource_budget",
+    "binding_status",
+    "authorization_ref",
+    "issued_by",
+    "effective_at",
+    "expires_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.4.0"
+    },
+    "promoted_capability_binding_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "promotion_request_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "promotion_eligibility_assessment_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "base_piece_type": {
+      "$ref": "#/$defs/base_piece_type"
+    },
+    "promoted_piece_type": {
+      "$ref": "#/$defs/promoted_piece_type"
+    },
+    "board_state_before_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision_before": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "board_state_after_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision_after": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "source_node_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "granted_capability_additions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "granted_tool_additions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "granted_data_scope_additions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "authority_scope_binding_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "effective_resource_budget": {
+      "$ref": "#/$defs/resource_budget"
+    },
+    "binding_status": {
+      "enum": [
+        "active",
+        "expired",
+        "revoked"
+      ]
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "issued_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "effective_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    },
+    "base_piece_type": {
+      "enum": [
+        "king",
+        "rook",
+        "bishop",
+        "gold",
+        "silver",
+        "knight",
+        "lance",
+        "pawn",
+        "custom"
+      ]
+    },
+    "promoted_piece_type": {
+      "enum": [
+        "promoted-rook",
+        "promoted-bishop",
+        "promoted-silver",
+        "promoted-knight",
+        "promoted-lance",
+        "promoted-pawn",
+        "custom-promoted"
+      ]
+    },
+    "resource_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_tokens_per_move",
+        "max_cost_per_move",
+        "currency",
+        "max_duration_seconds",
+        "max_concurrent_actions"
+      ],
+      "properties": {
+        "max_tokens_per_move": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_cost_per_move": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "max_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_concurrent_actions": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
