@@ -34,6 +34,27 @@ CHECK_KEYS = [
     "all_checks_passed",
 ]
 
+PROMOTION_CHECK_KEYS = [
+    "mission_in_scope",
+    "board_reference_current",
+    "piece_registered",
+    "agent_matches_piece",
+    "source_matches_board",
+    "piece_active",
+    "piece_promotable",
+    "promotion_type_allowed",
+    "zone_allows_promotion",
+    "capabilities_allowed",
+    "tools_allowed",
+    "data_scopes_allowed",
+    "authority_scope_allowed",
+    "resource_multiplier_within_limit",
+    "duration_within_limit",
+    "no_active_promotion",
+    "human_axis_protected",
+    "all_checks_passed",
+]
+
 
 class ValidationFailure(Exception):
     """Raised when repository validation does not match expectations."""
@@ -88,10 +109,24 @@ def validate_piece_semantics(piece: dict[str, Any]) -> list[str]:
         )
 
     if piece["piece_type"] == "king" and piece["movement_profile"]["max_hops_per_move"] != 0:
-        errors.append("king: max_hops_per_move must be 0 in v0.3")
+        errors.append("king: max_hops_per_move must be 0 in v0.4")
 
     if piece["piece_type"] != "king" and "rewrite_human_axis" not in denied:
         errors.append("non-king piece: denied_actions must include 'rewrite_human_axis'")
+
+    promotion = piece.get("promotion_profile")
+    if promotion:
+        if piece["piece_type"] in {"king", "gold"}:
+            errors.append(f"{piece['piece_type']}: this piece type cannot define a promotion_profile")
+        additions = set(promotion["allowed_capability_additions"])
+        forbidden = sorted(additions & denied)
+        if forbidden:
+            errors.append("promotion_profile: capability additions conflict with denied_actions: " + ", ".join(forbidden))
+        already_present = sorted(additions & allowed)
+        if already_present:
+            errors.append("promotion_profile: capability additions must be new capabilities: " + ", ".join(already_present))
+        if "rewrite_human_axis" in additions:
+            errors.append("promotion_profile: rewrite_human_axis can never be granted by promotion")
 
     return errors
 
@@ -173,6 +208,27 @@ def validate_board_semantics(
         piece = pieces[piece_id]
         if occupancy["agent_id"] != piece["agent_id"]:
             errors.append(f"occupancy '{piece_id}': agent_id does not match piece profile")
+
+        promotion_state = occupancy.get("promotion_state")
+        binding_ref = occupancy.get("promotion_binding_ref")
+        effective_piece_type = occupancy.get("effective_piece_type")
+        if promotion_state == "promoted":
+            promotion_profile = piece.get("promotion_profile")
+            if promotion_profile is None:
+                errors.append(f"occupancy '{piece_id}': promoted state requires a promotable piece profile")
+            elif effective_piece_type not in promotion_profile["allowed_promoted_piece_types"]:
+                errors.append(f"occupancy '{piece_id}': effective promoted piece type is not allowed by the piece profile")
+            if piece["piece_type"] in {"king", "gold"}:
+                errors.append(f"occupancy '{piece_id}': king and gold pieces cannot be promoted")
+            if not binding_ref:
+                errors.append(f"occupancy '{piece_id}': promoted state requires promotion_binding_ref")
+        elif promotion_state == "base":
+            if binding_ref:
+                errors.append(f"occupancy '{piece_id}': base state cannot retain promotion_binding_ref")
+            if effective_piece_type and effective_piece_type != piece["piece_type"]:
+                errors.append(f"occupancy '{piece_id}': base state effective_piece_type must match the piece profile")
+        elif binding_ref:
+            errors.append(f"occupancy '{piece_id}': promotion_binding_ref requires promotion_state 'promoted'")
 
         if node_id not in nodes:
             errors.append(f"occupancy '{piece_id}': unknown node_id '{node_id}'")
@@ -1096,6 +1152,385 @@ def validate_redeployment_semantics(
         errors.append("redeployment: applied_at cannot precede requested_at")
     return errors
 
+def resource_budget_within_multiplier(
+    requested: dict[str, Any],
+    base: dict[str, Any],
+    multiplier: float,
+) -> bool:
+    if requested["currency"] != base["currency"]:
+        return False
+    numeric_fields = [
+        "max_tokens_per_move",
+        "max_cost_per_move",
+        "max_duration_seconds",
+        "max_concurrent_actions",
+    ]
+    return all(requested[field] <= base[field] * multiplier for field in numeric_fields)
+
+
+def assess_promotion(
+    request: dict[str, Any],
+    pieces: dict[str, dict[str, Any]],
+    board: dict[str, Any],
+) -> dict[str, Any]:
+    checks = {key: False for key in PROMOTION_CHECK_KEYS}
+    reasons: list[dict[str, str]] = []
+    nodes = {node["node_id"]: node for node in board["nodes"]}
+    zones = {zone["zone_id"]: zone for zone in board["zones"]}
+    occupancies = occupancy_by_piece(board)
+
+    checks["mission_in_scope"] = request["mission_id"] == board["mission_id"]
+    checks["board_reference_current"] = (
+        request["board_state_ref"] == board["board_state_id"]
+        and request["board_revision"] == board["board_revision"]
+    )
+    piece = pieces.get(request["piece_profile_id"])
+    checks["piece_registered"] = piece is not None
+    checks["agent_matches_piece"] = bool(piece and request["agent_id"] == piece["agent_id"])
+    occupancy = occupancies.get(request["piece_profile_id"])
+    checks["source_matches_board"] = bool(
+        occupancy and occupancy["node_id"] == request["source_node_id"]
+    )
+    checks["piece_active"] = bool(
+        piece
+        and occupancy
+        and piece["lifecycle_state"] == "active"
+        and occupancy["placement_state"] == "active"
+    )
+    profile = piece.get("promotion_profile") if piece else None
+    checks["piece_promotable"] = bool(
+        profile and piece["piece_type"] not in {"king", "gold"}
+    )
+    checks["promotion_type_allowed"] = bool(
+        profile
+        and request["requested_promoted_piece_type"]
+        in profile["allowed_promoted_piece_types"]
+    )
+    source_node = nodes.get(request["source_node_id"])
+    source_zone = zones.get(source_node["zone_id"]) if source_node else None
+    checks["zone_allows_promotion"] = bool(
+        profile and source_zone and source_zone["zone_type"] in profile["allowed_zone_types"]
+    )
+    denied = set(piece["capability_profile"]["denied_actions"]) if piece else set()
+    requested_capabilities = set(request["requested_capability_additions"])
+    checks["capabilities_allowed"] = bool(
+        profile
+        and requested_capabilities.issubset(set(profile["allowed_capability_additions"]))
+        and not requested_capabilities.intersection(denied)
+    )
+    checks["tools_allowed"] = bool(
+        profile
+        and set(request["requested_tool_additions"]).issubset(
+            set(profile["allowed_tool_additions"])
+        )
+    )
+    checks["data_scopes_allowed"] = bool(
+        profile
+        and set(request["requested_data_scope_additions"]).issubset(
+            set(profile["allowed_data_scope_additions"])
+        )
+    )
+    checks["authority_scope_allowed"] = bool(
+        profile
+        and request["requested_authority_scope_ref"]
+        in profile["allowed_authority_scope_refs"]
+    )
+    checks["resource_multiplier_within_limit"] = bool(
+        profile
+        and piece
+        and resource_budget_within_multiplier(
+            request["requested_resource_budget"],
+            piece["resource_budget"],
+            profile["max_resource_multiplier"],
+        )
+    )
+    checks["duration_within_limit"] = bool(
+        profile and request["requested_duration_seconds"] <= profile["max_duration_seconds"]
+    )
+    checks["no_active_promotion"] = bool(
+        occupancy
+        and occupancy.get("promotion_state", "base") != "promoted"
+        and not occupancy.get("promotion_binding_ref")
+    )
+    checks["human_axis_protected"] = bool(
+        piece
+        and piece["piece_type"] != "king"
+        and "rewrite_human_axis" not in requested_capabilities
+    )
+    essential = [key for key in PROMOTION_CHECK_KEYS if key != "all_checks_passed"]
+    checks["all_checks_passed"] = all(checks[key] for key in essential)
+
+    reason_map = [
+        ("mission_in_scope", "MISSION_OUT_OF_SCOPE", "The request mission does not match the board."),
+        ("board_reference_current", "STALE_BOARD_REFERENCE", "The request does not reference the current board revision."),
+        ("piece_registered", "UNKNOWN_PIECE", "The requested piece profile is not registered."),
+        ("agent_matches_piece", "AGENT_PROFILE_MISMATCH", "The agent identifier does not match the piece profile."),
+        ("source_matches_board", "SOURCE_OCCUPANCY_MISMATCH", "The requested source node does not match board occupancy."),
+        ("piece_active", "PIECE_NOT_ACTIVE", "Only an active board piece can be promoted."),
+        ("piece_promotable", "PIECE_NOT_PROMOTABLE", "The piece profile does not permit promotion."),
+        ("promotion_type_allowed", "PROMOTION_TYPE_FORBIDDEN", "The requested promoted piece type is not allowed."),
+        ("zone_allows_promotion", "PROMOTION_ZONE_FORBIDDEN", "The current board zone does not permit promotion."),
+        ("capabilities_allowed", "CAPABILITY_ADDITION_FORBIDDEN", "One or more requested capability additions are not allowed."),
+        ("tools_allowed", "TOOL_ADDITION_FORBIDDEN", "One or more requested tool additions are not allowed."),
+        ("data_scopes_allowed", "DATA_SCOPE_ADDITION_FORBIDDEN", "One or more requested data-scope additions are not allowed."),
+        ("authority_scope_allowed", "AUTHORITY_SCOPE_FORBIDDEN", "The requested authority scope is not allowed."),
+        ("resource_multiplier_within_limit", "RESOURCE_MULTIPLIER_EXCEEDED", "The requested budget exceeds the promotion multiplier."),
+        ("duration_within_limit", "PROMOTION_DURATION_EXCEEDED", "The requested duration exceeds the piece promotion limit."),
+        ("no_active_promotion", "PROMOTION_ALREADY_ACTIVE", "The piece already has an active promotion binding."),
+        ("human_axis_protected", "HUMAN_AXIS_PROMOTION_FORBIDDEN", "Promotion cannot modify or replace the human axis."),
+    ]
+    if not checks["all_checks_passed"]:
+        for key, code, message in reason_map:
+            if not checks[key]:
+                reasons.append({"code": code, "message": message})
+
+    if checks["all_checks_passed"]:
+        human_review = bool(profile and profile["requires_human_review"])
+        decision = "human-review" if human_review else "eligible"
+    else:
+        human_review = False
+        decision = "ineligible"
+    return {
+        "decision": decision,
+        "checks": checks,
+        "required_controls": {
+            "authorization_required": True,
+            "human_review_required": human_review,
+        },
+        "assessment_reasons": reasons,
+    }
+
+
+def validate_promotion_request_semantics(
+    request: dict[str, Any],
+    pieces: dict[str, dict[str, Any]],
+    board: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    piece = pieces.get(request["piece_profile_id"])
+    if piece and request["base_piece_type"] != piece["piece_type"]:
+        errors.append("promotion request: base_piece_type does not match the piece profile")
+    if parse_time(request["valid_until"]) <= parse_time(request["requested_at"]):
+        errors.append("promotion request: valid_until must be later than requested_at")
+    if request["requested_duration_seconds"] > (
+        parse_time(request["valid_until"]) - parse_time(request["requested_at"])
+    ).total_seconds():
+        errors.append("promotion request: requested duration exceeds the request validity window")
+    assessment = assess_promotion(request, pieces, board)
+    if assessment["decision"] == "ineligible":
+        for reason in assessment["assessment_reasons"]:
+            errors.append(f"promotion request: {reason['code']}: {reason['message']}")
+    return errors
+
+
+def validate_promotion_assessment_semantics(
+    assessment: dict[str, Any],
+    requests: dict[str, dict[str, Any]],
+    pieces: dict[str, dict[str, Any]],
+    board: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    request = requests.get(assessment["promotion_request_ref"])
+    if request is None:
+        return ["promotion assessment: promotion_request_ref does not resolve"]
+    comparisons = {
+        "mission_id": "mission_id",
+        "board_state_ref": "board_state_ref",
+        "evaluated_board_revision": "board_revision",
+        "piece_profile_id": "piece_profile_id",
+        "agent_id": "agent_id",
+    }
+    for assessment_field, request_field in comparisons.items():
+        if assessment[assessment_field] != request[request_field]:
+            errors.append(f"promotion assessment: {assessment_field} does not match the request")
+    expected = assess_promotion(request, pieces, board)
+    if assessment["decision"] != expected["decision"]:
+        errors.append(
+            f"promotion assessment: decision '{assessment['decision']}' does not match recomputed decision '{expected['decision']}'"
+        )
+    for key in PROMOTION_CHECK_KEYS:
+        if assessment["checks"][key] != expected["checks"][key]:
+            errors.append(f"promotion assessment: check '{key}' does not match recomputed result")
+    if assessment["required_controls"] != expected["required_controls"]:
+        errors.append("promotion assessment: required_controls do not match recomputed controls")
+    actual_codes = [item["code"] for item in assessment["assessment_reasons"]]
+    expected_codes = [item["code"] for item in expected["assessment_reasons"]]
+    if actual_codes != expected_codes:
+        errors.append(
+            f"promotion assessment: reason codes do not match recomputed failures (expected {expected_codes}, got {actual_codes})"
+        )
+    evaluated_at = parse_time(assessment["evaluated_at"])
+    if evaluated_at < parse_time(request["requested_at"]):
+        errors.append("promotion assessment: evaluated_at cannot precede requested_at")
+    if parse_time(assessment["valid_until"]) <= evaluated_at:
+        errors.append("promotion assessment: valid_until must be later than evaluated_at")
+    if parse_time(assessment["valid_until"]) > parse_time(request["valid_until"]):
+        errors.append("promotion assessment: validity cannot exceed the promotion request")
+    return errors
+
+
+def validate_promotion_binding_semantics(
+    binding: dict[str, Any],
+    requests: dict[str, dict[str, Any]],
+    assessments: dict[str, dict[str, Any]],
+    boards: dict[str, dict[str, Any]],
+    pieces: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    request = requests.get(binding["promotion_request_ref"])
+    assessment = assessments.get(binding["promotion_eligibility_assessment_ref"])
+    before = boards.get(binding["board_state_before_ref"])
+    after = boards.get(binding["board_state_after_ref"])
+    piece = pieces.get(binding["piece_profile_id"])
+    if request is None:
+        errors.append("promotion binding: promotion_request_ref does not resolve")
+        return errors
+    if assessment is None:
+        errors.append("promotion binding: promotion_eligibility_assessment_ref does not resolve")
+        return errors
+    if assessment["promotion_request_ref"] != request["promotion_request_id"]:
+        errors.append("promotion binding: request and assessment lineage do not match")
+    if assessment["decision"] not in {"eligible", "human-review"}:
+        errors.append("promotion binding: ineligible assessment cannot create a binding")
+    for field in ("mission_id", "piece_profile_id", "agent_id", "base_piece_type"):
+        if binding[field] != request[field]:
+            errors.append(f"promotion binding: {field} does not match the request")
+    if binding["promoted_piece_type"] != request["requested_promoted_piece_type"]:
+        errors.append("promotion binding: promoted_piece_type does not match the request")
+    if binding["source_node_id"] != request["source_node_id"]:
+        errors.append("promotion binding: source_node_id does not match the request")
+    set_fields = [
+        ("granted_capability_additions", "requested_capability_additions"),
+        ("granted_tool_additions", "requested_tool_additions"),
+        ("granted_data_scope_additions", "requested_data_scope_additions"),
+    ]
+    for binding_field, request_field in set_fields:
+        if set(binding[binding_field]) != set(request[request_field]):
+            errors.append(f"promotion binding: {binding_field} does not exactly match the authorized request")
+    if binding["authority_scope_binding_ref"] != request["requested_authority_scope_ref"]:
+        errors.append("promotion binding: authority scope does not match the authorized request")
+    if binding["effective_resource_budget"] != request["requested_resource_budget"]:
+        errors.append("promotion binding: effective resource budget does not match the authorized request")
+    if piece:
+        denied = set(piece["capability_profile"]["denied_actions"])
+        conflicts = sorted(set(binding["granted_capability_additions"]) & denied)
+        if conflicts:
+            errors.append("promotion binding: granted capabilities conflict with denied actions: " + ", ".join(conflicts))
+    if not binding.get("authorization_ref"):
+        errors.append("promotion binding: authorization_ref is required")
+    if assessment["required_controls"]["human_review_required"] and not binding.get("human_review_ref"):
+        errors.append("promotion binding: human_review_ref is required")
+    if binding["binding_status"] != "active":
+        errors.append("promotion binding: canonical applied example must be active")
+    if before is None or after is None:
+        errors.append("promotion binding: before and after board states must resolve")
+    else:
+        if binding["board_revision_before"] != before["board_revision"]:
+            errors.append("promotion binding: board_revision_before does not match before board")
+        if binding["board_revision_after"] != after["board_revision"]:
+            errors.append("promotion binding: board_revision_after does not match after board")
+        if after["board_revision"] != before["board_revision"] + 1:
+            errors.append("promotion binding: board revision must advance by one")
+        before_occ = occupancy_by_piece(before).get(binding["piece_profile_id"])
+        after_occ = occupancy_by_piece(after).get(binding["piece_profile_id"])
+        if before_occ is None or before_occ["node_id"] != binding["source_node_id"]:
+            errors.append("promotion binding: piece is not active at source_node_id on before board")
+        elif before_occ.get("promotion_state", "base") == "promoted":
+            errors.append("promotion binding: piece is already promoted on before board")
+        if after_occ is None or after_occ["node_id"] != binding["source_node_id"]:
+            errors.append("promotion binding: after board must retain the piece at source_node_id")
+        else:
+            if after_occ.get("promotion_state") != "promoted":
+                errors.append("promotion binding: after board must mark the piece as promoted")
+            if after_occ.get("promotion_binding_ref") != binding["promoted_capability_binding_id"]:
+                errors.append("promotion binding: after-board promotion_binding_ref does not match")
+            if after_occ.get("effective_piece_type") != binding["promoted_piece_type"]:
+                errors.append("promotion binding: after-board effective_piece_type does not match")
+    effective_at = parse_time(binding["effective_at"])
+    expires_at = parse_time(binding["expires_at"])
+    if expires_at <= effective_at:
+        errors.append("promotion binding: expires_at must be later than effective_at")
+    if effective_at < parse_time(assessment["evaluated_at"]):
+        errors.append("promotion binding: effective_at cannot precede the eligibility assessment")
+    if effective_at > parse_time(assessment["valid_until"]):
+        errors.append("promotion binding: assessment expired before the binding became effective")
+    if effective_at < parse_time(request["requested_at"]):
+        errors.append("promotion binding: effective_at cannot precede the request")
+    if expires_at > parse_time(request["valid_until"]):
+        errors.append("promotion binding: expires_at cannot exceed request valid_until")
+    if (expires_at - effective_at).total_seconds() > request["requested_duration_seconds"]:
+        errors.append("promotion binding: effective duration exceeds requested_duration_seconds")
+    return errors
+
+
+def validate_demotion_semantics(
+    record: dict[str, Any],
+    bindings: dict[str, dict[str, Any]],
+    boards: dict[str, dict[str, Any]],
+    pieces: dict[str, dict[str, Any]],
+) -> list[str]:
+    errors: list[str] = []
+    binding = bindings.get(record["promotion_binding_ref"])
+    before = boards.get(record["board_state_before_ref"])
+    after = boards.get(record["board_state_after_ref"])
+    piece = pieces.get(record["piece_profile_id"])
+    if binding is None:
+        return ["demotion: promotion_binding_ref does not resolve"]
+    for field in ("mission_id", "piece_profile_id", "agent_id"):
+        if record[field] != binding[field]:
+            errors.append(f"demotion: {field} does not match the promotion binding")
+    if record["source_node_id"] != binding["source_node_id"]:
+        errors.append("demotion: source_node_id does not match the promotion binding")
+    if set(record["revoked_capabilities"]) != set(binding["granted_capability_additions"]):
+        errors.append("demotion: revoked_capabilities must exactly remove the promoted additions")
+    if set(record["revoked_tools"]) != set(binding["granted_tool_additions"]):
+        errors.append("demotion: revoked_tools must exactly remove the promoted additions")
+    if set(record["revoked_data_scopes"]) != set(binding["granted_data_scope_additions"]):
+        errors.append("demotion: revoked_data_scopes must exactly remove the promoted additions")
+    if piece is None:
+        errors.append("demotion: piece_profile_id does not resolve")
+    else:
+        if record["restored_authority_scope_ref"] != piece["authority_scope"]["authority_scope_ref"]:
+            errors.append("demotion: restored authority scope does not match the base piece profile")
+        if record["restored_resource_budget"] != piece["resource_budget"]:
+            errors.append("demotion: restored resource budget does not match the base piece profile")
+    if record["demotion_status"] == "applied" and not record.get("authorization_ref"):
+        errors.append("demotion: applied demotion requires authorization_ref")
+    if before is None or after is None:
+        errors.append("demotion: before and after board states must resolve")
+    else:
+        if record["board_revision_before"] != before["board_revision"]:
+            errors.append("demotion: board_revision_before does not match before board")
+        if record["board_revision_after"] != after["board_revision"]:
+            errors.append("demotion: board_revision_after does not match after board")
+        if after["board_revision"] != before["board_revision"] + 1:
+            errors.append("demotion: board revision must advance by one")
+        before_occ = occupancy_by_piece(before).get(record["piece_profile_id"])
+        after_occ = occupancy_by_piece(after).get(record["piece_profile_id"])
+        if before_occ is None or before_occ.get("promotion_binding_ref") != binding["promoted_capability_binding_id"]:
+            errors.append("demotion: before board does not contain the active promotion binding")
+        elif before_occ["node_id"] != record["source_node_id"]:
+            errors.append("demotion: before-board source node does not match")
+        if after_occ is None or after_occ["node_id"] != record["source_node_id"]:
+            errors.append("demotion: after board must retain the piece at source_node_id")
+        else:
+            if after_occ.get("promotion_state", "base") != "base":
+                errors.append("demotion: after board must restore base promotion_state")
+            if after_occ.get("promotion_binding_ref"):
+                errors.append("demotion: after board must remove promotion_binding_ref")
+            if piece and after_occ.get("effective_piece_type", piece["piece_type"]) != piece["piece_type"]:
+                errors.append("demotion: after board must restore the base piece type")
+    requested_at = parse_time(record["requested_at"])
+    applied_at = parse_time(record["applied_at"])
+    if applied_at < requested_at:
+        errors.append("demotion: applied_at cannot precede requested_at")
+    if record["demotion_reason"] == "expiry" and applied_at < parse_time(binding["expires_at"]):
+        errors.append("demotion: expiry demotion cannot apply before binding expiry")
+    if record["demotion_reason"] != "expiry" and applied_at > parse_time(binding["expires_at"]):
+        errors.append("demotion: non-expiry demotion must apply before the binding expires")
+    return errors
+
+
 def report_errors(prefix: str, errors: list[str]) -> None:
     for error in errors:
         print(f"  - {prefix}: {error}")
@@ -1131,7 +1566,7 @@ def validate_pass_document(
 
 
 def main() -> int:
-    print("=== Shogi Agent Orchestration Protocol v0.3 Validation ===")
+    print("=== Shogi Agent Orchestration Protocol v0.4 Validation ===")
     print()
 
     schemas = {
@@ -1146,6 +1581,10 @@ def main() -> int:
         "sanitization": load_schema("agent-sanitization-assessment.schema.json"),
         "reserve": load_schema("reserve-pool-entry.schema.json"),
         "redeployment": load_schema("agent-redeployment-record.schema.json"),
+        "promotion_request": load_schema("agent-promotion-request.schema.json"),
+        "promotion_assessment": load_schema("promotion-eligibility-assessment.schema.json"),
+        "promotion_binding": load_schema("promoted-capability-binding.schema.json"),
+        "demotion": load_schema("agent-demotion-record.schema.json"),
     }
     failures: list[str] = []
 
@@ -1221,6 +1660,32 @@ def main() -> int:
         if document:
             redeployments[document["redeployment_record_id"]] = document
 
+    promotion_requests: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("agent-promotion-request.*.example.yaml")):
+        raw = load_document(path); board = boards.get(raw["board_state_ref"], base_board)
+        document = validate_pass_document(path, schemas["promotion_request"], lambda item, b=board: validate_promotion_request_semantics(item, pieces, b), failures)
+        if document:
+            promotion_requests[document["promotion_request_id"]] = document
+
+    promotion_assessments: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("promotion-eligibility-assessment.*.example.yaml")):
+        raw = load_document(path); request = promotion_requests.get(raw["promotion_request_ref"]); board = boards.get(request["board_state_ref"], base_board) if request else base_board
+        document = validate_pass_document(path, schemas["promotion_assessment"], lambda item, b=board: validate_promotion_assessment_semantics(item, promotion_requests, pieces, b), failures)
+        if document:
+            promotion_assessments[document["promotion_eligibility_assessment_id"]] = document
+
+    promotion_bindings: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("promoted-capability-binding.*.example.yaml")):
+        document = validate_pass_document(path, schemas["promotion_binding"], lambda item: validate_promotion_binding_semantics(item, promotion_requests, promotion_assessments, boards, pieces), failures)
+        if document:
+            promotion_bindings[document["promoted_capability_binding_id"]] = document
+
+    demotions: dict[str, dict[str, Any]] = {}
+    for path in sorted(PASS_DIR.glob("agent-demotion-record.*.example.yaml")):
+        document = validate_pass_document(path, schemas["demotion"], lambda item: validate_demotion_semantics(item, promotion_bindings, boards, pieces), failures)
+        if document:
+            demotions[document["demotion_record_id"]] = document
+
     fail_cases = [
         (FAIL_DIR / "piece-profile.invalid-piece-type.example.yaml", "piece", "schema"),
         (FAIL_DIR / "board-state.duplicate-occupancy.example.yaml", "board", "semantic"),
@@ -1234,6 +1699,10 @@ def main() -> int:
         (FAIL_DIR / "agent-sanitization-assessment.false-pass.example.yaml", "sanitization", "semantic"),
         (FAIL_DIR / "reserve-pool-entry.unsafe-ready.example.yaml", "reserve", "semantic"),
         (FAIL_DIR / "agent-redeployment-record.side-mismatch.example.yaml", "redeployment", "semantic"),
+        (FAIL_DIR / "agent-promotion-request.king-forbidden.example.yaml", "promotion_request", "semantic"),
+        (FAIL_DIR / "promotion-eligibility-assessment.false-eligible.example.yaml", "promotion_assessment", "semantic"),
+        (FAIL_DIR / "promoted-capability-binding.overextended.example.yaml", "promotion_binding", "semantic"),
+        (FAIL_DIR / "agent-demotion-record.binding-mismatch.example.yaml", "demotion", "semantic"),
     ]
 
     for path, schema_key, expected_stage in fail_cases:
@@ -1267,6 +1736,22 @@ def main() -> int:
             semantic = validate_reserve_entry_semantics(document, pieces, boards, captures, assessments, reserves)
         elif schema_key == "redeployment":
             semantic = validate_redeployment_semantics(document, reserves, assessments, placements, boards, pieces)
+        elif schema_key == "promotion_request":
+            board = boards.get(document["board_state_ref"], base_board)
+            semantic = validate_promotion_request_semantics(document, pieces, board)
+        elif schema_key == "promotion_assessment":
+            request = promotion_requests.get(document["promotion_request_ref"])
+            if request is None and document["promotion_request_ref"] == "promotion-request.wind-mission.king-forbidden":
+                request = load_document(FAIL_DIR / "agent-promotion-request.king-forbidden.example.yaml")
+                request_map = {request["promotion_request_id"]: request}
+            else:
+                request_map = promotion_requests
+            board = boards.get(request["board_state_ref"], base_board) if request else base_board
+            semantic = validate_promotion_assessment_semantics(document, request_map, pieces, board)
+        elif schema_key == "promotion_binding":
+            semantic = validate_promotion_binding_semantics(document, promotion_requests, promotion_assessments, boards, pieces)
+        elif schema_key == "demotion":
+            semantic = validate_demotion_semantics(document, promotion_bindings, boards, pieces)
         else:
             semantic = []
         if semantic:
