@@ -1,4 +1,4 @@
-schema_version: 0.3.0
+schema_version: 0.4.0
 piece_profile_id: piece-profile.human-axis-king.v1
 agent_id: agent.human-axis-guardian
 piece_type: king
@@ -20,7 +20,7 @@ capability_profile:
   - data.mission-intent
   - data.board-governance
 movement_profile:
-  movement_policy_ref: policy.shogi-agent-legal-moves.v0.3
+  movement_policy_ref: policy.shogi-agent-legal-moves.v0.4
   max_hops_per_move: 0
   may_cross_security_zones: false
   may_enter_restricted_zones: true
