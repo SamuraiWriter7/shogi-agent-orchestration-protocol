@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 piece_profile_id: piece-profile.trace-pawn.v1
 agent_id: agent.trace-worker-01
 piece_type: pawn
@@ -22,7 +22,7 @@ capability_profile:
   - data.workflow-events
   - data.trace-buffer
 movement_profile:
-  movement_policy_ref: policy.shogi-agent-legal-moves.v0.4
+  movement_policy_ref: policy.shogi-agent-legal-moves.v0.5
   max_hops_per_move: 1
   may_cross_security_zones: false
   may_enter_restricted_zones: false
@@ -59,4 +59,3 @@ promotion_profile:
   max_duration_seconds: 3600
   max_resource_multiplier: 2.0
   requires_human_review: true
-
