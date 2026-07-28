@@ -1,4 +1,4 @@
-schema_version: 0.4.0
+schema_version: 0.5.0
 piece_profile_id: piece-profile.omnipotent-god.v1
 agent_id: agent.omnipotent-god
 piece_type: omnipotent
@@ -16,7 +16,7 @@ authority_scope:
   max_autonomy: delegated
   requires_human_review_for: []
 movement_profile:
-  movement_policy_ref: policy.shogi-agent-legal-moves.v0.4
+  movement_policy_ref: policy.shogi-agent-legal-moves.v0.5
   max_hops_per_move: 32
   may_cross_security_zones: true
   may_enter_restricted_zones: true
