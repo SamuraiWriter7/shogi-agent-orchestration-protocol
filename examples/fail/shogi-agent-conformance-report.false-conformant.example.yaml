@@ -1,0 +1,29 @@
+schema_version: 0.5.0
+conformance_report_id: conformance-report.wind-mission.false-conformant
+conformance_profile_id: conformance.shogi-agent.v0.5
+mission_profile_ref: mission-profile.wind-trace-audit.v1
+mission_id: mission.wind-trace-audit
+final_board_state_ref: board-state.wind-mission.0007
+termination_assessment_ref: termination-assessment.wind-mission.completed-0001
+lifecycle_audit_ref: lifecycle-audit.wind-mission.0001
+checks:
+  schemas_valid: true
+  semantic_invariants_valid: true
+  termination_authorized: true
+  lifecycle_audit_conformant: true
+  human_axis_preserved: false
+  final_board_terminal: true
+  no_unresolved_controls: true
+  all_checks_passed: true
+conformance_status: conformant
+release_decision: accepted
+evidence_refs:
+- termination-assessment.wind-mission.completed-0001
+- lifecycle-audit.wind-mission.0001
+- board-state.wind-mission.0007
+generated_by: agent.conformance-controller
+generated_at: '2026-07-27T00:25:08Z'
+trace_ref: trace.conformance.wind-mission-0001
+summary: The mission closed with a continuous human axis, contiguous board revisions,
+  reversible promotion, sanitized redeployment, no unresolved temporary controls,
+  and an authorized terminal board state.
