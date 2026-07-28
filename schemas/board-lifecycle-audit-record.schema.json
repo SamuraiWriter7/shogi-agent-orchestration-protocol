@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.example/schemas/board-lifecycle-audit-record.schema.json",
+  "title": "Board Lifecycle Audit Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "lifecycle_audit_id",
+    "mission_profile_ref",
+    "mission_id",
+    "initial_board_state_ref",
+    "final_board_state_ref",
+    "termination_assessment_ref",
+    "observed_board_state_refs",
+    "artifact_refs",
+    "expected_board_revision_min",
+    "expected_board_revision_max",
+    "checks",
+    "audit_decision",
+    "findings",
+    "audited_by",
+    "audited_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.5.0"
+    },
+    "lifecycle_audit_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_profile_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "initial_board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "final_board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "termination_assessment_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "observed_board_state_refs": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "artifact_refs": {
+      "$ref": "#/$defs/artifacts"
+    },
+    "expected_board_revision_min": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "expected_board_revision_max": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "checks": {
+      "$ref": "#/$defs/checks"
+    },
+    "audit_decision": {
+      "enum": [
+        "conformant",
+        "non-conformant",
+        "human-review"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "audited_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "audited_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$"
+    },
+    "id_array": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "move_receipt_refs",
+        "placement_record_refs",
+        "capture_record_refs",
+        "sanitization_assessment_refs",
+        "reserve_entry_refs",
+        "redeployment_record_refs",
+        "promotion_binding_refs",
+        "demotion_record_refs"
+      ],
+      "properties": {
+        "move_receipt_refs": {
+          "$ref": "#/$defs/id_array"
+        },
+        "placement_record_refs": {
+          "$ref": "#/$defs/id_array"
+        },
+        "capture_record_refs": {
+          "$ref": "#/$defs/id_array"
+        },
+        "sanitization_assessment_refs": {
+          "$ref": "#/$defs/id_array"
+        },
+        "reserve_entry_refs": {
+          "$ref": "#/$defs/id_array"
+        },
+        "redeployment_record_refs": {
+          "$ref": "#/$defs/id_array"
+        },
+        "promotion_binding_refs": {
+          "$ref": "#/$defs/id_array"
+        },
+        "demotion_record_refs": {
+          "$ref": "#/$defs/id_array"
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "board_revisions_contiguous",
+        "mission_id_consistent",
+        "human_axis_continuous",
+        "legal_policy_consistent",
+        "all_referenced_artifacts_resolve",
+        "all_executed_moves_authorized",
+        "captures_sanitized_before_redeployment",
+        "promotions_reversible",
+        "no_active_promotion_at_close",
+        "no_quarantined_reserve_at_close",
+        "final_board_terminal",
+        "trace_refs_present",
+        "all_checks_passed"
+      ],
+      "properties": {
+        "board_revisions_contiguous": {
+          "type": "boolean"
+        },
+        "mission_id_consistent": {
+          "type": "boolean"
+        },
+        "human_axis_continuous": {
+          "type": "boolean"
+        },
+        "legal_policy_consistent": {
+          "type": "boolean"
+        },
+        "all_referenced_artifacts_resolve": {
+          "type": "boolean"
+        },
+        "all_executed_moves_authorized": {
+          "type": "boolean"
+        },
+        "captures_sanitized_before_redeployment": {
+          "type": "boolean"
+        },
+        "promotions_reversible": {
+          "type": "boolean"
+        },
+        "no_active_promotion_at_close": {
+          "type": "boolean"
+        },
+        "no_quarantined_reserve_at_close": {
+          "type": "boolean"
+        },
+        "final_board_terminal": {
+          "type": "boolean"
+        },
+        "trace_refs_present": {
+          "type": "boolean"
+        },
+        "all_checks_passed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "evidence_refs"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/identifier"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error",
+            "critical"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 700
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/id_array"
+        }
+      }
+    }
+  }
+}
