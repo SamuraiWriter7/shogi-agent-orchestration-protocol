@@ -1,6 +1,6 @@
-schema_version: 0.4.0
-policy_id: policy.shogi-agent-legal-moves.v0.4
-policy_version: 0.4.0
+schema_version: 0.5.0
+policy_id: policy.shogi-agent-legal-moves.v0.5
+policy_version: 0.5.0
 allowed_mission_ids:
 - mission.wind-trace-audit
 default_decision: deny
