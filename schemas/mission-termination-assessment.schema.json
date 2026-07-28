@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.example/schemas/mission-termination-assessment.schema.json",
+  "title": "Mission Termination Assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "termination_assessment_id",
+    "mission_profile_ref",
+    "mission_id",
+    "board_state_ref",
+    "board_revision",
+    "evaluated_success_conditions",
+    "evaluated_termination_conditions",
+    "open_controls",
+    "outcome",
+    "outcome_reason",
+    "required_controls",
+    "evaluated_by",
+    "evaluated_at",
+    "trace_ref"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.5.0"
+    },
+    "termination_assessment_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_profile_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "evaluated_success_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/success_result"
+      }
+    },
+    "evaluated_termination_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/termination_result"
+      }
+    },
+    "open_controls": {
+      "$ref": "#/$defs/open_controls"
+    },
+    "outcome": {
+      "enum": [
+        "continue",
+        "complete",
+        "terminate",
+        "pause",
+        "human-review"
+      ]
+    },
+    "outcome_reason": {
+      "enum": [
+        "success",
+        "human-stop",
+        "safety-trigger",
+        "resource-limit",
+        "timeout",
+        "no-legal-move",
+        "conditions-not-met",
+        "open-controls"
+      ]
+    },
+    "required_controls": {
+      "$ref": "#/$defs/required_controls"
+    },
+    "authorization_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "human_review_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "evaluated_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 1000
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "enum": [
+              "complete",
+              "terminate"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "authorization_ref"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,199}$"
+    },
+    "success_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_id",
+        "satisfied",
+        "evidence_refs"
+      ],
+      "properties": {
+        "condition_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "satisfied": {
+          "type": "boolean"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "termination_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_id",
+        "triggered",
+        "evidence_refs"
+      ],
+      "properties": {
+        "condition_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "triggered": {
+          "type": "boolean"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "open_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "active_promotion_binding_refs",
+        "quarantined_reserve_entry_refs",
+        "unresolved_authorization_refs",
+        "open_dispute_refs"
+      ],
+      "properties": {
+        "active_promotion_binding_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "quarantined_reserve_entry_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "unresolved_authorization_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "open_dispute_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "required_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorization_required",
+        "human_review_required"
+      ],
+      "properties": {
+        "authorization_required": {
+          "type": "boolean"
+        },
+        "human_review_required": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
