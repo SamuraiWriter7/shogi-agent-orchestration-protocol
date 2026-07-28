@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shidenkai-alpha.github.io/shogi-agent-orchestration-protocol/schemas/promotion-eligibility-assessment.schema.json",
+  "title": "Promotion Eligibility Assessment",
+  "description": "Records a reproducible eligibility decision for a temporary agent promotion request.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "promotion_eligibility_assessment_id",
+    "promotion_request_ref",
+    "mission_id",
+    "board_state_ref",
+    "evaluated_board_revision",
+    "piece_profile_id",
+    "agent_id",
+    "decision",
+    "checks",
+    "required_controls",
+    "assessment_reasons",
+    "evaluated_by",
+    "evaluated_at",
+    "valid_until"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.4.0"
+    },
+    "promotion_eligibility_assessment_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "promotion_request_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "mission_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "board_state_ref": {
+      "$ref": "#/$defs/identifier"
+    },
+    "evaluated_board_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "piece_profile_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "agent_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "decision": {
+      "enum": [
+        "eligible",
+        "human-review",
+        "ineligible"
+      ]
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mission_in_scope",
+        "board_reference_current",
+        "piece_registered",
+        "agent_matches_piece",
+        "source_matches_board",
+        "piece_active",
+        "piece_promotable",
+        "promotion_type_allowed",
+        "zone_allows_promotion",
+        "capabilities_allowed",
+        "tools_allowed",
+        "data_scopes_allowed",
+        "authority_scope_allowed",
+        "resource_multiplier_within_limit",
+        "duration_within_limit",
+        "no_active_promotion",
+        "human_axis_protected",
+        "all_checks_passed"
+      ],
+      "properties": {
+        "mission_in_scope": {
+          "type": "boolean"
+        },
+        "board_reference_current": {
+          "type": "boolean"
+        },
+        "piece_registered": {
+          "type": "boolean"
+        },
+        "agent_matches_piece": {
+          "type": "boolean"
+        },
+        "source_matches_board": {
+          "type": "boolean"
+        },
+        "piece_active": {
+          "type": "boolean"
+        },
+        "piece_promotable": {
+          "type": "boolean"
+        },
+        "promotion_type_allowed": {
+          "type": "boolean"
+        },
+        "zone_allows_promotion": {
+          "type": "boolean"
+        },
+        "capabilities_allowed": {
+          "type": "boolean"
+        },
+        "tools_allowed": {
+          "type": "boolean"
+        },
+        "data_scopes_allowed": {
+          "type": "boolean"
+        },
+        "authority_scope_allowed": {
+          "type": "boolean"
+        },
+        "resource_multiplier_within_limit": {
+          "type": "boolean"
+        },
+        "duration_within_limit": {
+          "type": "boolean"
+        },
+        "no_active_promotion": {
+          "type": "boolean"
+        },
+        "human_axis_protected": {
+          "type": "boolean"
+        },
+        "all_checks_passed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "required_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorization_required",
+        "human_review_required"
+      ],
+      "properties": {
+        "authorization_required": {
+          "type": "boolean"
+        },
+        "human_review_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "assessment_reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "evaluated_by": {
+      "$ref": "#/$defs/identifier"
+    },
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:-]{2,127}$"
+    }
+  }
+}
